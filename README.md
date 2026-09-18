@@ -2,15 +2,43 @@
 
 **Review one predicted first frame, then continue the same H3 generation.**
 
-[日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Validation](docs/VALIDATION.md)
+[日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
-## v1.1.1 compatibility fix
+## v1.2.0 — Native Reference Transparency
 
-ComfyUI can register the stock `BasicGuider` from a separately-loaded extension module instance. v1.1.0 compared Python class identities and could therefore reject the ordinary Core `BasicGuider` before sampling. v1.1.1 validates the supported Core guider contract/MRO instead and snapshots the actual graph instance, while still rejecting dual-model/custom guiders that need a dedicated resume adapter.
+The generic Draft/Continue pair now formally preserves MiniMax H3 native Reference conditioning.
 
-## Insert into your existing workflow
+No Reference ports are added to these nodes. Keep using the normal upstream H3 conditioning nodes.
 
-Replace the sampling block, not the entire workflow:
+```text
+MiniMax H3 native conditioning / Reference
+                  ↓
+      NOISE / GUIDER / SAMPLER / SIGMAS / AV LATENT
+                  ↓
+           H3 Draft Sampler
+              Preview
+                  ↓ state
+          H3 Continue Sampler
+                  ↓ standard LATENT
+      your normal Decode / postprocess / Save
+```
+
+Core `minimax_refs` blocks remain inside CONDITIONING. Draft-Continue snapshots and fingerprints them without converting or re-encoding them.
+
+An approved Draft is invalidated if native Reference content, count, order, kind or native metadata changes after Preview.
+
+The Draft report includes:
+- Reference count and kind distribution
+- original ordered Reference list
+- Reference tensor shapes/dtypes
+- Reference payload SHA-256
+- `reference_reencoded=false`
+
+Phase 1 Generic Draft/Continue is user GPU PASS. Phase 2 Reference support is implemented and host-tested; the R0-R3 real-GPU gate is still pending.
+
+## Existing workflow integration
+
+Replace the sampling block, not the whole workflow:
 
 ```text
 Your NOISE / GUIDER / SAMPLER / SIGMAS / H3 AV LATENT
@@ -23,22 +51,20 @@ Your NOISE / GUIDER / SAMPLER / SIGMAS / H3 AV LATENT
         Your video/audio VAE Decode → postprocess → Save
 ```
 
-The pair does not rebuild prompts, conditioning, CFG, geometry, noise sources or schedules. Model loading, Turbo LoRA and conditioning (including native H3 references/keyframes) remain upstream. Decoding and saving remain downstream. Continue returns the same two LATENT port names/order as SamplerCustomAdvanced: `output`, `denoised_output`.
-
-The original **H3 T2VA Draft / H3 T2VA Continue** integrated pair remains available.
-
-### Start
-
-Install this repository into `ComfyUI/custom_nodes`, restart ComfyUI and refresh the browser. No additional pip/runtime dependencies or model downloads are required.
+The pair does not rebuild prompts, conditioning, CFG, geometry, noise sources or schedules. Model loading, Turbo LoRA, native H3 Reference/Guide/Keyframe conditioning remain upstream. Decoding and saving remain downstream.
 
 Recommended proven concept baseline: shared 4-step Turbo LoRA at 1.0, 6 total steps, Preview after 3, Continue for the remaining 3. The generic sampler pair currently resumes native Core Euler without churn.
 
-Click **Preview**, review one image, then click **GO · Continue this draft**. **New seed + Preview** changes only a directly connected Core RandomNoise seed. For other noise providers, edit the upstream seed yourself.
+## Scope
 
-### Scope and safety
+- native MiniMax H3 joint AV latent, batch=1
+- Core BasicGuider / CFGGuider / DualCFGGuider
+- Core Euler without churn
+- external H3 flow SIGMAS
+- native tensor/scalar `minimax_refs`
+- state bound to the current ComfyUI backend session
+- 512 MiB Draft-state payload budget
 
-Standard ports do not mean all-model/all-sampler support. This version targets native MiniMax H3 joint AV, batch=1; Core Basic/CFG/DualCFG guiders; Core Euler without churn; valid descending H3 flow SIGMAS ending at zero. Live ControlNet/hook objects, masks and multistep solver histories need dedicated adapters.
+Live ControlNet/hook objects, noise masks, custom/multi-model guiders and multistep solver history need dedicated adapters.
 
-State is session-bound and integrity checked. GO binds to the reviewed State ID and refuses changed inputs, changed runtime bindings, mutated payloads or a regenerated unseen draft. No new random noise, image re-encoding, automatic approval, forced unload or disk-state import is used.
-
-The user-confirmed Core proof-of-concept passed Preview → Continue → video generation. The v1.1.1 guider compatibility fix is covered by host regression tests; rerun the actual H3 GPU workflow after updating to certify the fix in your environment.
+No additional pip/runtime dependencies or model downloads are required.
