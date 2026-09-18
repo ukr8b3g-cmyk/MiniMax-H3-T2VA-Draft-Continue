@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {webcrypto} from 'node:crypto';
+import {canonical,branch,signature,continueRequest,safeWorkflow,newSeed} from '../web/logic.mjs';
+const fixture=()=>({'1':{class_type:'Loader',inputs:{name:'model'}},'2':{class_type:'H3T2VADraft',inputs:{model:['1',0],duration:5}},'3':{class_type:'H3T2VAContinue',inputs:{draft_state:['2',1],go:false,approved_state_id:''}},'4':{class_type:'SaveVideo',inputs:{video:['3',0]}}});
+test('canonical stable',()=>assert.equal(canonical({z:5,a:'人物'}),'{"a":"人物","z":n:4014000000000000}'));
+test('ancestor pruning',()=>assert.deepEqual(Object.keys(branch(fixture(),['2'])),['1','2']));
+test('GO selected branch',()=>{const r=continueRequest(fixture(),'3','a'.repeat(32));assert.equal(r['3'].inputs.go,true);assert.ok(r['4']);});
+test('invalid approval',()=>assert.throws(()=>continueRequest(fixture(),'3','stale')));
+test('signature changes upstream',async()=>{const f=fixture(),a=await signature(f,'2',webcrypto);f['1'].inputs.name='different';assert.notEqual(a,await signature(f,'2',webcrypto));});
+test('approval never persists',()=>{const f={nodes:[{type:'H3T2VAContinue',widgets_values:[true,'secret'],widgets_values_named:{go:true,approved_state_id:'secret'}}]};assert.equal(safeWorkflow(f).nodes[0].widgets_values[0],false);});
+test('seed safe',()=>{for(let i=0;i<20;i++){const s=newSeed(webcrypto);assert.ok(Number.isSafeInteger(s)&&s>=0&&s<=Number.MAX_SAFE_INTEGER);}});

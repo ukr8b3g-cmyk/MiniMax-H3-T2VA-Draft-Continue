@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+*.log
+*.latent
+*.safetensors
+*.mp4
+*.webm
+*.png
+!docs/*.png
+
+.h3draft_backups/
+.h3update-*
