@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+from types import SimpleNamespace
 import torch
 from .contracts import DraftError, Settings
 
@@ -19,15 +20,36 @@ def outputs(result):
 class CoreBackend:
     def __init__(self):
         try:
-            self.custom = importlib.import_module("comfy_extras.nodes_custom_sampler")
-            self.h3 = importlib.import_module("comfy_extras.nodes_minimax_h3")
-            self.video = importlib.import_module("comfy_extras.nodes_video")
-            self.audio = importlib.import_module("comfy_extras.nodes_audio")
             self.nodes = importlib.import_module("nodes")
             self.nt = importlib.import_module("comfy.nested_tensor")
             self.mm = importlib.import_module("comfy.model_management")
         except (ImportError, AttributeError) as exc:
             raise DraftError("MiniMax H3 Core support is missing. Use ComfyUI 0.36.0 or compatible newer Core and restart.") from exc
+
+        # Built-in extra nodes are loaded by ComfyUI through spec_from_file_location.
+        # Re-importing comfy_extras.nodes_* here can create a second module/class
+        # identity. Bind only to the node classes already registered by Core.
+        mapping = getattr(self.nodes, "NODE_CLASS_MAPPINGS", None)
+        if not isinstance(mapping, dict):
+            raise DraftError("ComfyUI node registry is unavailable. Restart ComfyUI.")
+
+        def require(name):
+            node = mapping.get(name)
+            if node is None:
+                raise DraftError(f"Required Core node {name} is not registered. Update/restart ComfyUI.")
+            return node
+
+        self.custom = SimpleNamespace(
+            BasicGuider=require("BasicGuider"),
+            KSamplerSelect=require("KSamplerSelect"),
+            BasicScheduler=require("BasicScheduler"),
+            RandomNoise=require("RandomNoise"),
+            DisableNoise=require("DisableNoise"),
+            SamplerCustomAdvanced=require("SamplerCustomAdvanced"),
+        )
+        self.h3 = SimpleNamespace(MiniMaxH3ImageToVideo=require("MiniMaxH3ImageToVideo"))
+        self.video = SimpleNamespace(CreateVideo=require("CreateVideo"))
+        self.audio = SimpleNamespace(VAEDecodeAudio=require("VAEDecodeAudio"))
 
     def interrupt(self):
         self.mm.throw_exception_if_processing_interrupted()
