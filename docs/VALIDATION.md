@@ -1,52 +1,51 @@
 # Validation
 
-Date: 2026-09-18.
+Date: 2026-09-19.
 
-## Concept GPU evidence
+## Confirmed GPU evidence
 
-The user confirmed the Core-only proof of concept:
-- MiniMax H3 T2VA
-- shared 4-step Turbo LoRA
-- 6 total steps
-- Preview after 3
-- Continue for the remaining 3
-- final video generation succeeds
+The user confirmed:
+- Core proof of concept Preview 3/6 → Continue 3/6 → final video
+- generic Sampler-level integration works in the real ComfyUI_W environment
+- the Core loader identity fix passes the real workflow
 
-That proves the Preview → Continue concept in the tested Core workflow.
+These establish Phase 1 Generic Draft/Continue as GPU PASS.
 
-## v1.1.1 compatibility fix
+## Phase 2 implementation status
 
-A real ComfyUI 0.36.0 / Python 3.13.12 run reached `H3DraftSampler` and failed before denoising because v1.1.0 compared the incoming stock `BasicGuider` by exact Python class identity even though the workflow used Core BasicGuider.
+Native Reference Transparency is implemented but not yet GPU-certified.
 
-v1.1.1 replaces that identity check with supported Core contract/MRO validation and snapshots the actual incoming guider instance. Host regression tests simulate separately-loaded `Guider_Basic` and `CFGGuider`; a `Guider_DualModel` lookalike remains rejected.
+Implemented host contracts:
+- no extra Reference input ports
+- native `minimax_refs` stays inside external CONDITIONING
+- reference tensors are snapshotted without re-encoding
+- reference order/kind/shape metadata is reported
+- dedicated reference payload hash is stored
+- content/count/order/metadata changes invalidate stale GO
+- existing whole-conditioning integrity checks remain active
+
+## Phase 2 R0-R3
+
+- R0: no Reference baseline
+- R1: one native image Reference
+- R2: multiple native References
+- R3: change Reference content/count/order after Preview and confirm stale GO is rejected
+
+See [REFERENCE_GATE.md](REFERENCE_GATE.md).
 
 ## What is and is not certified
 
-- Core proof-of-concept Preview → Continue → video: **user GPU PASS**
-- v1.1.1 class-identity regression: **host regression PASS**
-- v1.1.1 fix on the user's actual H3 GPU workflow: **rerun required**
-- arbitrary samplers / custom guiders / masks / live controls: **not supported by the current exact-resume contract**
+- Phase 1 generic Draft/Continue: **user GPU PASS**
+- Core loader identity fix: **user GPU PASS**
+- Phase 2 Native Reference host regression: **CI/host gate**
+- Phase 2 Native Reference real H3 inference: **pending GPU gate**
+- arbitrary samplers/custom guiders/masks/live controls: **not supported**
 
-## Safety checks
-
-The implementation verifies:
-- reviewed state ID
-- process/session scope
-- upstream graph signature
-- model/LoRA runtime binding
-- guider and sampler signatures
-- source AV latent, SIGMAS and noise identity
-- state payload integrity
-- joint video/audio geometry
-- no new random noise on Continue
-
-Unsupported inputs are rejected before continuation rather than silently changed.
-
-## Reproduce development contract tests
+## Development tests
 
 ```sh
 PYTHONPATH=.:tests python -m unittest discover -s tests -p 'test_*.py' -v
 node --test tests/*.test.mjs
 ```
 
-Browser tests are development-only mocked-host checks; they are not actual ComfyUI GPU inference.
+Host tests are contract tests and do not replace real MiniMax H3 GPU inference.
