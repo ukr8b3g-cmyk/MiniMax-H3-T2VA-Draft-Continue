@@ -63,6 +63,9 @@ class SamplerEngine(Engine):
                       sampling_transitions=preview_steps, denoiser_evaluations=None,
                       new_noise=True, external_noise_used=True,
                       conditioning_reencoded=False, schedule_rebuilt=False,
+                      native_reference_passthrough=True,
+                      reference_reencoded=False,
+                      reference_count=state.reference_manifest["count"],
                       preview={"kind":"x0_estimate", "frame_index":0,
                                "decoded_frames":geometry["frame_count"],
                                "prediction_eval_index":preview_steps-1,
@@ -98,6 +101,10 @@ class SamplerEngine(Engine):
                           sampling_transitions=remaining, denoiser_evaluations=None,
                           new_noise=False, conditioning_reencoded=False, schedule_rebuilt=False,
                           image_reencoding=False, conditioning_preserved=True,
+                          native_reference_passthrough=True,
+                          reference_reencoded=False,
+                          reference_count=state.reference_manifest["count"],
+                          reference_payload_sha256=state.reference_hash,
                           decoding="external_workflow", output_type="LATENT",
                           total_wall_s=time.perf_counter()-started)
             return SamplerContinueResult(final, x0, report)
