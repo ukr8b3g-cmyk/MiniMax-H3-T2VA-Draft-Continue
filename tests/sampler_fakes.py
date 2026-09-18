@@ -34,8 +34,8 @@ class Backend(CoreSamplerBackend):
         self.nt=SimpleNamespace(NestedTensor=Nested);self.mp=SimpleNamespace(create_model_options_clone=copy.deepcopy)
         self.samplers=SimpleNamespace(KSAMPLER=Sampler);self.kd=SimpleNamespace(sample_euler=sample_euler)
         self.guider_types=(GuiderBasic,GuiderCFG,GuiderDual)
-        self.custom=SimpleNamespace(SamplerCustomAdvanced=SimpleNamespace(execute=self.core_sample),
-                                    DisableNoise=SimpleNamespace(execute=lambda:(Noise(0,zero=True),)))
+        self.sampler_custom_node=SimpleNamespace(execute=self.core_sample)
+        self.disable_noise_node=SimpleNamespace(execute=lambda:(Noise(0,zero=True),))
     def core_sample(self,noise,guider,sampler,sigmas,latent_image):
         self.calls.append(("sample",noise,guider,sampler,sigmas.clone(),latent_image))
         parts=latent_image["samples"].unbind();generated=noise.generate_noise(latent_image).unbind()
