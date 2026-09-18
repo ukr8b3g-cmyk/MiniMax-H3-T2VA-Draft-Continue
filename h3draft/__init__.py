@@ -1,2 +1,2 @@
 """MiniMax H3 draft/continue. No model loads or server routes at import time."""
-VERSION = "1.1.1"
+VERSION = "1.2.0"
