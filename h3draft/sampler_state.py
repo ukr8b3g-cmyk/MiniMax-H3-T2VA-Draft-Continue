@@ -2,6 +2,10 @@
 
 Unlike the legacy Settings state, this contract derives geometry from the input
 AV latent and never rebuilds conditioning, noise or a sigma schedule.
+
+Phase 2 keeps native MiniMax H3 references transparent: ``minimax_refs``
+stays inside the original Core CONDITIONING. We only snapshot, fingerprint and
+report it; no custom reference format is introduced.
 """
 from __future__ import annotations
 
@@ -16,7 +20,8 @@ import torch
 from .contracts import DraftError, MAX_STATE_BYTES, digest_json
 from .state import PROCESS_ID, content_digest, runtime_signature
 
-SAMPLER_SCHEMA = "h3_sampler_draft_state_v1"
+SAMPLER_SCHEMA = "h3_sampler_draft_state_v2"
+NATIVE_REFERENCE_KINDS = frozenset({"image", "video", "video_audio", "audio"})
 
 
 def freeze(value: Any, label: str) -> Any:
@@ -53,6 +58,94 @@ def payload_digest(value: Any) -> tuple[str, int]:
             return ("tuple", [project(x) for x in v])
         return v
     return content_digest(project(value))
+
+
+def _tensor_descriptor(value):
+    if value is None:
+        return None
+    if not isinstance(value, torch.Tensor):
+        raise DraftError("Native H3 reference latent payload must be a tensor or None.")
+    if not value.is_floating_point() or not bool(torch.isfinite(value).all()):
+        raise DraftError("Native H3 reference latent payload must be finite floating point.")
+    return {
+        "shape": list(value.shape),
+        "dtype": str(value.dtype),
+        "bytes": value.numel() * value.element_size(),
+    }
+
+
+def native_reference_manifest(conds) -> tuple[dict, str]:
+    """Validate and summarize native H3 ``minimax_refs`` without rewriting it.
+
+    Ordering is part of the hash because H3 presents references to Qwen/DiT in
+    request order. The frozen reference payload is hashed directly, so changing
+    a reference tensor, count, order, kind or native scalar metadata invalidates
+    the reviewed Draft State.
+    """
+    if not isinstance(conds, dict):
+        raise DraftError("GUIDER conditioning must be a dictionary.")
+
+    frozen_refs = []
+    items = []
+    kind_counts = {kind: 0 for kind in sorted(NATIVE_REFERENCE_KINDS)}
+
+    for cond_name, entries in conds.items():
+        if not isinstance(entries, list):
+            continue
+        for entry_index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                raise DraftError(f"GUIDER conditioning {cond_name}[{entry_index}] must be a dictionary.")
+            refs = entry.get("minimax_refs")
+            if refs is None:
+                continue
+            if not isinstance(refs, list):
+                raise DraftError("Native H3 minimax_refs must be a list.")
+
+            for ref_index, ref in enumerate(refs):
+                if not isinstance(ref, dict):
+                    raise DraftError("Each native H3 minimax_refs item must be a dictionary.")
+                kind = ref.get("kind")
+                if kind not in NATIVE_REFERENCE_KINDS:
+                    raise DraftError(f"Unsupported native H3 reference kind: {kind!r}.")
+
+                frozen = freeze(
+                    ref,
+                    f"GUIDER conditioning.{cond_name}[{entry_index}].minimax_refs[{ref_index}]",
+                )
+                frozen_refs.append((cond_name, entry_index, ref_index, frozen))
+                kind_counts[kind] += 1
+
+                item = {
+                    "conditioning": cond_name,
+                    "conditioning_index": entry_index,
+                    "reference_index": ref_index,
+                    "kind": kind,
+                }
+                for key in ("latent_t", "latent_h", "latent_w", "ref_audio_t"):
+                    if key in ref and ref[key] is not None:
+                        value = ref[key]
+                        if type(value) is not int or value < 0:
+                            raise DraftError(f"Native H3 reference {key} must be a non-negative integer.")
+                        item[key] = value
+
+                if "latent" in ref:
+                    item["latent"] = _tensor_descriptor(ref.get("latent"))
+                if "audio_latent" in ref:
+                    item["audio_latent"] = _tensor_descriptor(ref.get("audio_latent"))
+                items.append(item)
+
+    digest, storage_bytes = payload_digest(frozen_refs)
+    manifest = {
+        "present": bool(items),
+        "count": len(items),
+        "kinds": {kind: count for kind, count in kind_counts.items() if count},
+        "items": items,
+        "payload_sha256": digest,
+        "storage_bytes": storage_bytes,
+        "source": "native_minimax_refs_passthrough",
+        "reencoded_by_draft_continue": False,
+    }
+    return manifest, digest
 
 
 def sampler_signature(sampler) -> str:
@@ -154,9 +247,12 @@ class SamplerDraftState:
     storage_bytes: int
     runtime_hash: str
     sampler_hash: str
+    reference_manifest: dict = field(repr=False)
+    reference_hash: str
     source_guider: Any = field(repr=False)
     source_sampler: Any = field(repr=False)
     source_guider_hash: str
+    source_reference_hash: str
     source_sampler_hash: str
     source_latent: Any = field(repr=False)
     source_sigmas: Any = field(repr=False)
@@ -175,19 +271,28 @@ class SamplerDraftState:
         external_sigmas(sigmas, preview_steps)
         if tuple(preview.shape) != (1, g["height"], g["width"], 3):
             raise DraftError("Preview must contain exactly Frame 0 at the input latent resolution.")
+
+        reference_manifest, reference_hash = native_reference_manifest(guider.original_conds)
+        _, source_reference_hash = native_reference_manifest(source_guider.original_conds)
+        if source_reference_hash != reference_hash:
+            raise DraftError("Native H3 reference conditioning changed while capturing the Draft State.")
+
         av = freeze(tuple(av), "AV state")
         metadata = freeze(metadata, "LATENT metadata")
         sigmas, preview = freeze(sigmas, "SIGMAS"), freeze(preview, "Preview")
         payload = (av, metadata, sigmas, preview, guider.original_conds,
-                   guider_parameters(guider), seed, preview_steps, graph_hash)
+                   guider_parameters(guider), reference_hash,
+                   seed, preview_steps, graph_hash)
         hashed, size = payload_digest(payload)
         if size > MAX_STATE_BYTES:
             raise DraftError("Draft including conditioning exceeds 512 MiB. Reduce resolution, duration or references.")
         return cls(guider, sampler, video_vae, av, metadata, sigmas, preview, seed,
                    preview_steps, graph_hash, str(source_node_id), hashed, size,
                    runtime_signature(guider.model_patcher, None, video_vae, None),
-                   sampler_signature(sampler), source_guider, source_sampler,
-                   guider_signature(source_guider, video_vae), sampler_signature(source_sampler),
+                   sampler_signature(sampler), reference_manifest, reference_hash,
+                   source_guider, source_sampler,
+                   guider_signature(source_guider, video_vae), source_reference_hash,
+                   sampler_signature(source_sampler),
                    source_latent, source_sigmas, source_noise,
                    input_signature(source_latent, source_sigmas, source_noise))
 
@@ -209,6 +314,19 @@ class SamplerDraftState:
             raise DraftError("An upstream workflow setting changed. Preview again before GO.")
         if runtime_signature(self.guider.model_patcher, None, self.video_vae, None) != self.runtime_hash:
             raise DraftError("Stored model/LoRA/runtime changed. Preview again.")
+
+        _, current_source_reference_hash = native_reference_manifest(
+            self.source_guider.original_conds
+        )
+        if current_source_reference_hash != self.source_reference_hash:
+            raise DraftError(
+                "Native H3 reference conditioning changed after Preview "
+                "(content, count, order or metadata). Generate a new Preview before GO."
+            )
+        _, stored_reference_hash = native_reference_manifest(self.guider.original_conds)
+        if stored_reference_hash != self.reference_hash:
+            raise DraftError("Stored Native H3 reference payload was modified. Preview again.")
+
         if (guider_signature(self.source_guider, self.video_vae) != self.source_guider_hash or
                 sampler_signature(self.source_sampler) != self.source_sampler_hash or
                 sampler_signature(self.sampler) != self.sampler_hash):
@@ -216,8 +334,8 @@ class SamplerDraftState:
         if input_signature(self.source_latent, self.source_sigmas, self.source_noise) != self.source_inputs_hash:
             raise DraftError("External LATENT/SIGMAS/NOISE changed after Preview. Generate a new Preview.")
         actual, _ = payload_digest((self.av, self.latent_metadata, self.sigmas, self.preview,
-            self.guider.original_conds, guider_parameters(self.guider), self.seed,
-            self.preview_steps, self.graph_hash))
+            self.guider.original_conds, guider_parameters(self.guider), self.reference_hash,
+            self.seed, self.preview_steps, self.graph_hash))
         if actual != self.payload_hash:
             raise DraftError("Sampler Draft payload was modified. Preview again.")
         native_geometry(self.av)
@@ -233,9 +351,11 @@ class SamplerDraftState:
                 "current_sigma": float(self.sigmas[self.preview_steps]),
                 "remaining_steps": total-self.preview_steps,
                 "video_shape": list(self.av[0].shape), "audio_shape": list(self.av[1].shape),
+                "native_references": copy.deepcopy(self.reference_manifest),
                 "settings": {**g, "seed": self.seed, "total_steps": total,
                     "preview_steps": self.preview_steps, "sampler": "euler",
                     "scheduler": "external_SIGMAS_unchanged", **guider_parameters(self.guider)},
                 "boundary_format": "comfy_sampler_output_inverse_noise_scaled",
                 "conditioning_source": "external_GUIDER_unchanged",
+                "reference_contract": "native_minimax_refs_transparent",
                 "models_residency": "managed_by_ComfyUI_not_pinned_by_this_extension"}
