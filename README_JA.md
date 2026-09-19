@@ -1,6 +1,12 @@
-# MiniMax H3 Draft Continue — v1.2.0
+# MiniMax H3 Draft Continue — v1.3.1
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## v1.3.1 — Phase 3A Timeline Experimental互換修正
+
+Timeline Experimental版Canvasは、静的STARTレイアウトを読み込んだだけでも `transition` と `timeline_experimental` を自動付与します。v1.3.1では、**ENDがSTARTと完全同一・MIDなし・Multi-Keyなし**の場合だけ「意味的に静的な自動ラッパー」と判定し、元のSTARTレイアウトと同じIR/hashへ正規化して許可します。
+
+ENDが1座標でも異なる、明示MIDがある、Keyframeがある、未知のtimeline metadataがある場合は従来どおり停止します。Phase 3Aで実Timeline情報を黙って捨てることはありません。
 
 ## Phase 2 — Native Reference Transparency
 
