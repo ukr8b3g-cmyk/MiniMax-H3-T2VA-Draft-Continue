@@ -157,6 +157,8 @@ Final cleanup check:
 - Phase 2 Native Reference Transparency: **GPU PASS**
 - Phase 3A static START structured layout: **GPU PASS**
 - Phase 3B START→END structured layout: **GPU PASS**
+- Phase 3C Multi-Key Timeline host regression: **PASS**
+- Phase 3C Multi-Key Timeline real GPU integration: **pending GPU gate**
 - subjective START→END motion quality: **not graded**
 - explicit MID / Multi-Key Timeline: **not yet Phase 3B**
 
@@ -164,8 +166,7 @@ Final cleanup check:
 
 Not yet covered:
 
-- explicit MID
-- Multi-Key Timeline
+- Phase 3C subjective Multi-Key motion quality
 - numeric depth enforcement
 - arbitrary live ControlNet/hooks
 - noise masks
