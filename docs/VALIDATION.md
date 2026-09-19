@@ -12,36 +12,157 @@ User-confirmed real ComfyUI/H3 passes:
 - Phase 2 Native Reference Transparency
 - Phase 3A static START structured-layout audit, including Timeline Experimental no-op wrapper compatibility
 - Phase 3A final video generation
+- Phase 3B START→END structured-layout integration gate T0–T4
 
-These are real-device execution results. Visual placement quality remains model-dependent and is not converted into a numeric quality certification.
+These are real-device execution results. Visual placement and motion quality remain model-dependent and are not converted into a numeric quality certification.
 
-## Phase 3B implementation status
+## Phase 3B GPU PASS
 
-START→END layout-transition auditing is implemented and host-tested. Real GPU validation is pending.
+Environment:
 
-Host contract:
+- backend: `http://127.0.0.6:8188`
+- repository HEAD: `97243bd`
+- GPU: NVIDIA GeForce RTX 5060 Ti 16 GB
+- date: 2026-09-19 JST
 
-- static START remains backward compatible
-- real `transition.end_boxes` is preserved
-- START/END use the same A/B/C slot set
-- one fixed Canvas geometry is required
-- explicit MID and Multi-Key remain rejected
-- START/END/prompt changes invalidate stale GO
-- no conditioning tensor rewrite or re-encode is introduced
+Gate result: **T0–T4 PASS** for integration/correctness.
 
-## Phase 3B GPU gate
+### T0 — static START regression
 
-- T0: static START regression → Preview → GO → final video
-- T1: one moving slot START→END → Preview → GO → final video
-- T2: two/three moving slots → Preview → GO → final video
-- T3: after Preview, change only END BBOX → old GO must be rejected before Continue sampling
-- T4: create a new Preview after the END change → GO must complete
+PASS.
 
-The Preview is still Frame 0 / START-oriented. Phase 3B does not claim that a single Preview verifies the final END pose; it verifies that the reviewed Draft is bound to the exact same START→END conditioning contract.
+- browser workflow
+- Preview 79.207 s
+- sampling 46.987 s
+- Preview decode 32.088 s
+- Continue 45.607 s
+- `scope = start`
+- no moved slots
+- resumed from step 3
+- no new noise
+- no conditioning re-encode
+- no schedule rebuild
+- final video/audio created successfully
+
+### T1 — one moving slot
+
+PASS.
+
+- real GPU server queue execution
+- `scope = start_end`
+- `moved_slots = ["a"]`
+- Preview → Continue completed
+- resumed from step 3
+- conditioning preserved
+- no new noise/re-encode/rebuild
+- final video/audio created successfully
+
+### T2 — two moving slots
+
+PASS.
+
+- real GPU server queue execution
+- `scope = start_end`
+- `moved_slots = ["a","b"]`
+- Preview → Continue completed
+- resumed from step 3
+- conditioning preserved
+- no new noise/re-encode/rebuild
+- final video/audio created successfully
+
+T1/T2 validated the server-side START→END path using prompt payloads derived from the repository v1.4 START-END example; they were not browser-loaded workflow runs.
+
+### T3 — stale GO rejection
+
+PASS.
+
+After Preview, only the END BBOX was changed.
+
+- old GO was rejected with “Settings changed”
+- it was not queued
+- queue remained 0 running / 0 pending
+- no continuation sampling started
+
+This satisfies the stale-approval safety contract.
+
+### T4 — re-preview then GO
+
+PASS.
+
+- browser workflow
+- Preview 76.091 s
+- Continue 42.597 s
+- `scope = start_end`
+- moved slot `b`
+- `start_hash`, `end_hash`, `transition_hash` present
+- Draft and Continue structured-layout payload hashes matched
+- resumed from step 3
+- no new noise/re-encode/rebuild
+- conditioning preserved
+- final video/audio created successfully
+
+## Media checks
+
+T0 final media:
+
+- H.264
+- 768×768
+- 24 fps
+- 124 frames
+- 5.166667 s
+- AAC 32 kHz stereo
+- audio 5.167 s
+
+T1/T2 final media:
+
+- H.264
+- 512×768
+- 24 fps
+- 124 frames
+- 5.166667 s
+- AAC 32 kHz stereo
+- audio 5.167 s
+
+T4 final media:
+
+- H.264
+- 768×768
+- 24 fps
+- 124 frames
+- 5.166667 s
+- AAC 32 kHz stereo
+- audio 5.167 s
+
+## Stability and resource note
+
+No OOM, NaN, crash, or failed queue execution was observed.
+
+T0 sampled peak was approximately:
+
+- VRAM: 15,122 MiB
+- system RAM: 62.31 GiB
+
+The machine had about 63.93 GiB total system RAM, so **system RAM headroom is a material warning** even though the gate passed.
+
+Final cleanup check:
+
+- queue: 0 running / 0 pending
+- backend left running
+- final GPU memory: 1,496 / 16,311 MiB
+
+## Current certification
+
+- Phase 1 generic Draft/Continue: **GPU PASS**
+- Core loader identity fix: **GPU PASS**
+- Phase 2 Native Reference Transparency: **GPU PASS**
+- Phase 3A static START structured layout: **GPU PASS**
+- Phase 3B START→END structured layout: **GPU PASS**
+- subjective START→END motion quality: **not graded**
+- explicit MID / Multi-Key Timeline: **not yet Phase 3B**
 
 ## Remaining boundary
 
-Not yet Phase 3B:
+Not yet covered:
 
 - explicit MID
 - Multi-Key Timeline
@@ -50,12 +171,3 @@ Not yet Phase 3B:
 - noise masks
 - custom/multi-model guiders
 - multistep solver-history resume
-
-## Development tests
-
-```sh
-PYTHONPATH=.:tests python -m unittest discover -s tests -p 'test_*.py' -v
-node --test tests/*.test.mjs
-```
-
-Host tests do not replace real MiniMax H3 GPU inference.
