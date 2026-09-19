@@ -1,6 +1,26 @@
-# MiniMax H3 Draft Continue — v1.4.0
+# MiniMax H3 Draft Continue — v1.5.0
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## v1.5.0 — Phase 3C Multi-Key Timeline Transparency
+
+H3 Structured CanvasのMulti-Key Timeline v4を正式に監査対象へ追加しました。
+
+対応仕様:
+
+- A/B/C独立
+- START + 中間Key最大7 + END
+- Duration 5.0〜15.0秒
+- normalized 0..1 time
+- Piecewise Linear
+- v4 Multi-Keyのoffscreen overscan -1000..2000
+- exact compiled promptを同じDraft Stateへ固定
+
+Draft-Continue側ではKeyを生成・補間しません。Canvas/Prompterが作った`keyframes`をそのままcanonical化してhash監査します。
+
+Reportには`scope=multi_key / timeline_hash / keyframe_hash / key_count / key_times / duration_seconds`を追加します。Preview後にKey座標、Key時刻、Key数、順序、Duration、START、END、Promptのどれかを変更すると、古いGOはSampling前に拒否されます。
+
+Phase 3A/3Bは後方互換のままです。Phase 3Cは実装・Host回帰PASS、実GPU Gate待ちです。
 
 ## v1.4.0 — Phase 3B START → END Layout Transition
 
