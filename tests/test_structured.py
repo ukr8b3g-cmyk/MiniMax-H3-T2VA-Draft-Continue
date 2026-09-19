@@ -24,6 +24,29 @@ def layout(n=1, size=32):
                       for i, s in enumerate("abc"[:n])]}
 
 
+def timeline_wrapped(base=None, version=3):
+    a = copy.deepcopy(base if base is not None else layout())
+    a["transition"] = {
+        "end_canvas": copy.deepcopy(a["canvas"]),
+        "end_boxes": copy.deepcopy(a["boxes"]),
+    }
+    timeline = {
+        "version": version,
+        "slots": ["a", "b", "c"],
+        "duration_seconds": 5.0,
+        "interpolation": "piecewise_linear",
+        "canonical_time": "normalized_0_1",
+        "mid_time": 0.5,
+        "mid_boxes": [],
+        "coordinate_space": "normalized_0_1000_with_offscreen_overscan",
+    }
+    if version >= 4:
+        timeline["max_intermediate_keys"] = 7
+        timeline["keyframes"] = {}
+    a["timeline_experimental"] = timeline
+    return a
+
+
 def load_bridge():
     # Test the actual public node, without importing the entire ComfyUI host.
     root = Path(__file__).resolve().parents[1]
@@ -85,11 +108,49 @@ class StructuredContractTests(unittest.TestCase):
         self.assertEqual(a["compiled_prompt"],"red\n")
         self.assertNotEqual(a["prompt_hash"],b["prompt_hash"])
 
-    def test_transition_and_timeline_are_not_silently_dropped(self):
-        for name in ("transition","timeline_experimental","timeline","keyframes"):
+    def test_static_timeline_v3_wrapper_hashes_as_plain_start(self):
+        plain = make_source(layout(2), "same")
+        wrapped = make_source(timeline_wrapped(layout(2), 3), "same")
+        self.assertEqual(wrapped, plain)
+
+    def test_static_timeline_v4_wrapper_hashes_as_plain_start(self):
+        plain = make_source(layout(2), "same")
+        wrapped = make_source(timeline_wrapped(layout(2), 4), "same")
+        self.assertEqual(wrapped, plain)
+
+    def test_real_end_difference_is_not_silently_dropped(self):
+        a = timeline_wrapped(layout(), 3)
+        a["transition"]["end_boxes"][0]["bbox_2d"][0] += 1
+        with self.assertRaisesRegex(DraftError, "END differs from START"):
+            make_source(a, "same")
+
+    def test_explicit_mid_is_not_silently_dropped(self):
+        a = timeline_wrapped(layout(), 3)
+        a["timeline_experimental"]["mid_boxes"] = copy.deepcopy(a["boxes"])
+        with self.assertRaisesRegex(DraftError, "Explicit MID"):
+            make_source(a, "same")
+
+    def test_multikey_is_not_silently_dropped(self):
+        a = timeline_wrapped(layout(), 4)
+        a["timeline_experimental"]["keyframes"] = {
+            "a": [{"time": 0.5, "bbox_2d": [20, 100, 280, 900]}]
+        }
+        with self.assertRaisesRegex(DraftError, "Multi-Key"):
+            make_source(a, "same")
+
+    def test_top_level_timeline_and_keyframes_still_rejected(self):
+        for name in ("timeline", "keyframes"):
             with self.subTest(name=name):
-                a=layout();a[name]={}
-                with self.assertRaisesRegex(DraftError,"START only"):make_source(a,"same")
+                a = layout()
+                a[name] = {}
+                with self.assertRaisesRegex(DraftError, "START only"):
+                    make_source(a, "same")
+
+    def test_unknown_transition_metadata_is_not_discarded(self):
+        a = timeline_wrapped(layout(), 3)
+        a["transition"]["future_field"] = True
+        with self.assertRaisesRegex(DraftError, "unknown transition metadata"):
+            make_source(a, "same")
 
     def test_overscan_nan_wrong_order_and_boolean_rejected(self):
         for coords in ([-1,100,280,900],[20,100,1001,900],[280,100,20,900],
