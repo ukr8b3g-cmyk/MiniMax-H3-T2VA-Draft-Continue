@@ -291,11 +291,15 @@ def _canonical_multikey_timeline(timeline, start_boxes):
     if not canonical:
         raise DraftError("Phase 3C Multi-Key requires at least one intermediate key.")
 
-    actual_mid = _canonical_mid_map(timeline.get("mid_boxes"))
-    if actual_mid != expected_mid:
-        raise DraftError(
-            "Timeline mid_boxes do not match the v4 keyframe at t=0.5; rebuild the Canvas timeline."
-        )
+    # Provider output carries legacy mid_boxes as a redundant mirror of a
+    # v4 key at t=0.5. Validate it when present, then omit it from canonical IR.
+    # A canonical IR being re-validated therefore legitimately has no mid_boxes.
+    if "mid_boxes" in timeline:
+        actual_mid = _canonical_mid_map(timeline.get("mid_boxes"))
+        if actual_mid != expected_mid:
+            raise DraftError(
+                "Timeline mid_boxes do not match the v4 keyframe at t=0.5; rebuild the Canvas timeline."
+            )
 
     return {
         "version": 4,
