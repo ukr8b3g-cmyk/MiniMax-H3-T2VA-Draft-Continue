@@ -21,7 +21,7 @@ The report adds `start_hash`, `end_hash`, `transition_hash`, and `moved_slots`. 
 
 [Phase 3B details](docs/PHASE3B_START_END.md) · [START→END workflow example](examples/H3-START-END-Layout-Draft.json)
 
-Phase 3A static START + Timeline no-op compatibility remains supported and has user-confirmed GPU/video PASS.
+Phase 3A static START + Timeline no-op compatibility remains supported and has user-confirmed GPU/video PASS. **Phase 3B T0–T4 is also GPU PASS** on RTX 5060 Ti 16 GB. T1/T2 exercised the same backend through server queue payloads; T0/T3/T4 included browser workflow runs. Subjective motion quality was not graded.
 
 ## v1.3.1 — START layout audit + Timeline Experimental compatibility
 
