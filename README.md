@@ -4,6 +4,12 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## v1.3.1 — START layout audit + Timeline Experimental compatibility
+
+Timeline Experimental automatically serializes a loaded static Canvas as `transition + timeline_experimental`. v1.3.1 accepts that wrapper only when it is semantically a no-op: END must equal START and there must be no explicit MID or Multi-Key data. The wrapper is then canonicalized to the same START IR/hash as the original static Canvas.
+
+Real END movement, explicit MID, Multi-Key data, unknown transition metadata, and unsupported timeline versions still fail closed instead of being discarded.
+
 ## v1.3.0 — START layout audit (Phase 3A)
 
 An optional **H3 Structured Layout Audit (START)** node attaches existing Canvas layout and exact compiled-prompt provenance to native CONDITIONING. Draft/Continue ports, conditioning tensors, the sampler, Reference processing and model selection are unchanged. The Canvas repository is not modified or imported by this package.
