@@ -1,4 +1,4 @@
-# Structured Layout Transparency — Phase 3A / 3B
+# Structured Layout Transparency — Phase 3A / 3B / 3C
 
 ## Architecture
 
@@ -78,3 +78,46 @@ Phase 3B does not accept explicit MID or Multi-Key semantics. Those belong to Ph
 It also does not claim that Frame 0 Preview proves the eventual END pose. Preview remains useful for START composition/identity review; the State integrity layer ensures GO continues with the same reviewed START→END contract.
 
 See [PHASE3B_START_END.md](PHASE3B_START_END.md) for the real-device gate.
+
+
+## Phase 3C — Multi-Key Timeline
+
+Phase 3C retains the provider's canonical v4 timeline instead of rejecting it.
+
+Requirements:
+
+- `timeline_experimental.version = 4`
+- 1–3 visible slots A/B/C
+- same slot set at START and END
+- maximum 7 intermediate keys per slot
+- normalized key time strictly between 0 and 1
+- provider minimum key spacing of 0.05 seconds
+- Duration 5.0–15.0 seconds
+- Piecewise Linear interpolation
+- fixed Canvas geometry
+
+For v4 only, BBOX overscan within -1000..2000 is preserved to match the provider contract.
+
+The canonical IR stores START, END and:
+
+```json
+{
+  "timeline_experimental": {
+    "version": 4,
+    "duration_seconds": 5,
+    "interpolation": "piecewise_linear",
+    "canonical_time": "normalized_0_1",
+    "max_intermediate_keys": 7,
+    "coordinate_space": "normalized_0_1000_with_offscreen_overscan",
+    "keyframes": {
+      "a": [{"time": 0.25, "bbox_2d": [100, 120, 470, 910]}]
+    }
+  }
+}
+```
+
+Legacy `mid_boxes` is accepted only when it exactly mirrors a v4 key at `t=0.5`; after validation it is omitted as redundant canonical data.
+
+Report fields include timeline/keyframe hashes, key count/times and Duration. Any change invalidates the reviewed Draft before Continue sampling.
+
+See [PHASE3C_MULTIKEY.md](PHASE3C_MULTIKEY.md).
