@@ -9,6 +9,7 @@ from .contracts import DraftError, graph_signature
 from .engine import Engine, DraftResult
 from .sampler_backend import CoreSamplerBackend
 from .sampler_state import SamplerDraftState, external_sigmas, freeze, native_geometry
+from .structured import structured_manifest
 
 
 @dataclass
@@ -33,6 +34,7 @@ class SamplerEngine(Engine):
         with self.timed(report, "validate_inputs"):
             external_sigmas(sigmas, preview_steps)
             geometry = self.backend.validate_external(noise, guider, sampler, latent_image, video_vae)
+            structured_manifest(guider.original_conds, geometry)
             owned_guider = self.backend.snapshot_guider(guider)
             owned_sampler = self.backend.snapshot_sampler(sampler)
             schedule = freeze(sigmas, "SIGMAS")
@@ -105,6 +107,7 @@ class SamplerEngine(Engine):
                           reference_reencoded=False,
                           reference_count=state.reference_manifest["count"],
                           reference_payload_sha256=state.reference_hash,
+                          structured_layout=structured_manifest(state.guider.original_conds),
                           decoding="external_workflow", output_type="LATENT",
                           total_wall_s=time.perf_counter()-started)
             return SamplerContinueResult(final, x0, report)

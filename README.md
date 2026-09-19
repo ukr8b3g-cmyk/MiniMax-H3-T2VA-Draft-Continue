@@ -4,6 +4,16 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## v1.3.0 — START layout audit (Phase 3A)
+
+An optional **H3 Structured Layout Audit (START)** node attaches existing Canvas layout and exact compiled-prompt provenance to native CONDITIONING. Draft/Continue ports, conditioning tensors, the sampler, Reference processing and model selection are unchanged. The Canvas repository is not modified or imported by this package.
+
+Connect the same Prompter STRING to the native H3 conditioner and the audit node, then connect audited CONDITIONING to your existing Guider. Changed layout/prompt metadata rejects stale GO. This is an integrity check, not stronger BBOX enforcement or proof that arbitrary conditioning was encoded from the supplied text.
+
+[START wiring and scope](docs/STRUCTURED_LAYOUT.md) · [日本語ガイド](docs/PHASE3A_JA.md) · [UI workflow example](examples/H3-START-Layout-Draft.json)
+
+Phase 3A supports 1–3 static START boxes in A/B/C. END/Multi-Key data is not silently stripped. New CPU/host tests are provided; actual Phase 3A ComfyUI/GPU and visual placement verification are pending.
+
 ## v1.2.0 — Native Reference Transparency
 
 The generic Draft/Continue pair now formally preserves MiniMax H3 native Reference conditioning.

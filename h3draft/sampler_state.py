@@ -19,6 +19,7 @@ from typing import Any
 import torch
 from .contracts import DraftError, MAX_STATE_BYTES, digest_json
 from .state import PROCESS_ID, content_digest, runtime_signature
+from .structured import structured_manifest, verify_structured_pair
 
 SAMPLER_SCHEMA = "h3_sampler_draft_state_v2"
 NATIVE_REFERENCE_KINDS = frozenset({"image", "video", "video_audio", "audio"})
@@ -272,6 +273,7 @@ class SamplerDraftState:
         if tuple(preview.shape) != (1, g["height"], g["width"], 3):
             raise DraftError("Preview must contain exactly Frame 0 at the input latent resolution.")
 
+        verify_structured_pair(guider.original_conds, source_guider.original_conds)
         reference_manifest, reference_hash = native_reference_manifest(guider.original_conds)
         _, source_reference_hash = native_reference_manifest(source_guider.original_conds)
         if source_reference_hash != reference_hash:
@@ -315,6 +317,7 @@ class SamplerDraftState:
         if runtime_signature(self.guider.model_patcher, None, self.video_vae, None) != self.runtime_hash:
             raise DraftError("Stored model/LoRA/runtime changed. Preview again.")
 
+        verify_structured_pair(self.guider.original_conds, self.source_guider.original_conds)
         _, current_source_reference_hash = native_reference_manifest(
             self.source_guider.original_conds
         )
@@ -352,6 +355,7 @@ class SamplerDraftState:
                 "remaining_steps": total-self.preview_steps,
                 "video_shape": list(self.av[0].shape), "audio_shape": list(self.av[1].shape),
                 "native_references": copy.deepcopy(self.reference_manifest),
+                "structured_layout": structured_manifest(self.guider.original_conds),
                 "settings": {**g, "seed": self.seed, "total_steps": total,
                     "preview_steps": self.preview_steps, "sampler": "euler",
                     "scheduler": "external_SIGMAS_unchanged", **guider_parameters(self.guider)},
