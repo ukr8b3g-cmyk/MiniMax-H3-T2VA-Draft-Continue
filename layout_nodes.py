@@ -8,7 +8,7 @@ class H3StructuredLayoutAudit:
     FUNCTION = "attach"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("positive",)
-    DESCRIPTION = ("Attach START layout provenance to existing H3 conditioning. "
+    DESCRIPTION = ("Attach START or START→END layout provenance to existing H3 conditioning. "
                    "Connect Canvas layout and the same exact Prompter string used by the text encoder. "
                    "No text rewrite, encoding, BBOX enforcement or latent modification.")
 
@@ -25,4 +25,4 @@ class H3StructuredLayoutAudit:
 
 
 NODE_CLASS_MAPPINGS = {"H3StructuredLayoutAudit": H3StructuredLayoutAudit}
-NODE_DISPLAY_NAME_MAPPINGS = {"H3StructuredLayoutAudit": "H3 Structured Layout Audit (START)"}
+NODE_DISPLAY_NAME_MAPPINGS = {"H3StructuredLayoutAudit": "H3 Structured Layout Audit"}
