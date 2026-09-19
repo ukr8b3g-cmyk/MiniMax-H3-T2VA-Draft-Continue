@@ -1,4 +1,4 @@
-"""Phase 3A/3B structured layout contracts and mocked-host Draft/Continue lifecycle."""
+"""Phase 3A/3B/3C structured layout contracts and mocked-host Draft/Continue lifecycle."""
 import copy
 import importlib.util
 from pathlib import Path
@@ -45,6 +45,39 @@ def timeline_wrapped(base=None, version=3):
         timeline["keyframes"] = {}
     a["timeline_experimental"] = timeline
     return a
+
+
+def multikey_layout(n=1, duration=5.0, times=None):
+    value = timeline_wrapped(layout(n), 4)
+    value["timeline_experimental"]["duration_seconds"] = duration
+    times = [0.25, 0.5, 0.75] if times is None else list(times)
+    keyframes = {}
+    mids = []
+    for index, slot in enumerate("abc"[:n]):
+        start = value["boxes"][index]["bbox_2d"]
+        x1,y1,x2,y2 = start
+        end_shift = 80 if index % 2 == 0 else -80
+        value["transition"]["end_boxes"][index]["bbox_2d"] = [
+            x1 + end_shift, y1, x2 + end_shift, y2
+        ]
+        items = []
+        for key_index, time in enumerate(times):
+            shift = round(end_shift * float(time))
+            vertical = 40 * ((key_index % 2) * 2 - 1)
+            bbox = [x1 + shift, y1 + vertical, x2 + shift, y2 + vertical]
+            items.append({"time": time, "bbox_2d": bbox})
+            if abs(float(time) - 0.5) <= 0.0005:
+                mids.append({"slot": slot, "bbox_2d": list(bbox)})
+        keyframes[slot] = items
+    value["timeline_experimental"].update({
+        "version": 4,
+        "max_intermediate_keys": 7,
+        "keyframes": keyframes,
+        "mid_time": 0.5,
+        "mid_boxes": mids,
+        "coordinate_space": "normalized_0_1000_with_offscreen_overscan",
+    })
+    return value
 
 
 def load_bridge():
@@ -164,12 +197,82 @@ class StructuredContractTests(unittest.TestCase):
         with self.assertRaisesRegex(DraftError, "Explicit MID"):
             make_source(a, "same")
 
-    def test_multikey_is_not_silently_dropped(self):
-        a = timeline_wrapped(layout(), 4)
-        a["timeline_experimental"]["keyframes"] = {
-            "a": [{"time": 0.5, "bbox_2d": [20, 100, 280, 900]}]
-        }
-        with self.assertRaisesRegex(DraftError, "Multi-Key"):
+    def test_multikey_v4_is_preserved_and_reported(self):
+        a = multikey_layout(1, 10.0)
+        source = make_source(a, "same")
+        self.assertEqual(source["scope"], "multi_key")
+        timeline = source["ir"]["timeline_experimental"]
+        self.assertEqual(timeline["version"], 4)
+        self.assertEqual(timeline["duration_seconds"], 10)
+        self.assertEqual(
+            [item["time"] for item in timeline["keyframes"]["a"]],
+            [0.25, 0.5, 0.75],
+        )
+        manifest = structured_manifest({"positive": [{KEY: source}]})
+        item = manifest["items"][0]
+        self.assertEqual(item["scope"], "multi_key")
+        self.assertEqual(item["key_count"], 3)
+        self.assertEqual(item["key_times"], {"a": [0.25, 0.5, 0.75]})
+        self.assertIsNotNone(item["timeline_hash"])
+        self.assertIsNotNone(item["keyframe_hash"])
+
+    def test_multikey_seven_keys_per_slot_supported(self):
+        times = [0.1,0.2,0.3,0.4,0.6,0.75,0.9]
+        source = make_source(multikey_layout(3, 15.0, times), "same")
+        manifest = structured_manifest({"positive": [{KEY: source}]})
+        item = manifest["items"][0]
+        self.assertEqual(item["key_count"], 21)
+        for slot in ("a","b","c"):
+            self.assertEqual(item["key_times"][slot], times)
+
+    def test_multikey_eight_keys_rejected(self):
+        times = [0.1,0.2,0.3,0.4,0.5,0.6,0.75,0.9]
+        a = multikey_layout(1, 15.0, times)
+        with self.assertRaisesRegex(DraftError, "at most 7"):
+            make_source(a, "same")
+
+    def test_multikey_duration_bounds_rejected(self):
+        for duration in (4.99, 15.01, float("nan"), float("inf")):
+            with self.subTest(duration=duration):
+                a = multikey_layout(1, 5.0)
+                a["timeline_experimental"]["duration_seconds"] = duration
+                with self.assertRaisesRegex(DraftError, "between 5.0 and 15.0"):
+                    make_source(a, "same")
+
+    def test_multikey_time_order_and_minimum_gap_rejected(self):
+        a = multikey_layout(1, 10.0, [0.2,0.203])
+        with self.assertRaisesRegex(DraftError, "minimum time gap"):
+            make_source(a, "same")
+        b = multikey_layout(1, 10.0, [0.6,0.4])
+        with self.assertRaisesRegex(DraftError, "strictly ordered"):
+            make_source(b, "same")
+
+    def test_multikey_mid_must_match_t_half_key(self):
+        a = multikey_layout(1, 10.0)
+        a["timeline_experimental"]["mid_boxes"][0]["bbox_2d"][0] += 1
+        with self.assertRaisesRegex(DraftError, "mid_boxes do not match"):
+            make_source(a, "same")
+
+    def test_multikey_offscreen_overscan_is_preserved(self):
+        a = multikey_layout(1, 10.0, [0.25,0.75])
+        a["boxes"][0]["bbox_2d"] = [-200,100,100,900]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [1100,100,1400,900]
+        a["timeline_experimental"]["keyframes"]["a"] = [
+            {"time":0.25,"bbox_2d":[-100,80,200,880]},
+            {"time":0.75,"bbox_2d":[900,80,1200,880]},
+        ]
+        a["timeline_experimental"]["mid_boxes"] = []
+        source = make_source(a, "same")
+        self.assertEqual(source["ir"]["boxes"][0]["bbox_2d"],[-200,100,100,900])
+        self.assertEqual(
+            source["ir"]["transition"]["end_boxes"][0]["bbox_2d"],
+            [1100,100,1400,900],
+        )
+
+    def test_multikey_unknown_item_field_rejected(self):
+        a = multikey_layout(1)
+        a["timeline_experimental"]["keyframes"]["a"][0]["extra"] = 1
+        with self.assertRaisesRegex(DraftError, "exactly time and bbox_2d"):
             make_source(a, "same")
 
     def test_top_level_timeline_and_keyframes_still_rejected(self):
@@ -177,7 +280,7 @@ class StructuredContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 a = layout()
                 a[name] = {}
-                with self.assertRaisesRegex(DraftError, "Multi-Key phase"):
+                with self.assertRaisesRegex(DraftError, "top-level timeline/keyframes"):
                     make_source(a, "same")
 
     def test_unknown_transition_metadata_is_not_discarded(self):
@@ -271,6 +374,9 @@ class StructuredLifecycleTests(unittest.TestCase):
             box["bbox_2d"] = [x1+shift,y1,x2+shift,y2]
         return value
 
+    def multi_layout(self,n=1,duration=5.0,times=None):
+        return multikey_layout(n,duration,times)
+
     def draft(self):
         return self.e.draft_external(self.n,self.g,self.s,self.sig,self.lat,self.vae,3).state
 
@@ -334,6 +440,66 @@ class StructuredLifecycleTests(unittest.TestCase):
     def test_start_end_metadata_cannot_change_numerical_result_host_double(self):
         full,_=self.b.sample_external(Noise(self.n.seed),self.g,self.s,self.lat,self.sig)
         self.install(layout_value=self.transition_layout(2))
+        state=self.draft()
+        out=self.e.continue_external(state,state.state_id)
+        for a,b in zip(full["samples"].unbind(),out.latent["samples"].unbind()):
+            self.assertTrue(torch.allclose(a,b,atol=2e-7,rtol=2e-7))
+
+
+    def test_c1_multikey_preview_continue(self):
+        self.install(layout_value=self.multi_layout(1,10.0))
+        state=self.draft()
+        audit=state.summary()["structured_layout"]
+        item=audit["items"][0]
+        self.assertEqual(item["scope"],"multi_key")
+        self.assertEqual(item["key_count"],3)
+        self.assertEqual(item["key_times"],{"a":[0.25,0.5,0.75]})
+        out=self.e.continue_external(state,state.state_id)
+        self.assertEqual(out.report["structured_layout"],audit)
+        self.assertFalse(out.report["conditioning_reencoded"])
+
+    def test_c2_multikey_three_slots_preview_continue(self):
+        self.install(layout_value=self.multi_layout(3,15.0,[0.1,0.3,0.6,0.9]))
+        state=self.draft()
+        out=self.e.continue_external(state,state.state_id)
+        item=out.report["structured_layout"]["items"][0]
+        self.assertEqual(item["scope"],"multi_key")
+        self.assertEqual(item["key_count"],12)
+        self.assertEqual(set(item["key_times"]),{"a","b","c"})
+
+    def test_c3_key_bbox_changed_stale_go_rejected_before_sampling(self):
+        initial=self.multi_layout(1,10.0)
+        self.install(layout_value=initial)
+        state=self.draft()
+        changed=copy.deepcopy(initial)
+        changed["timeline_experimental"]["keyframes"]["a"][0]["bbox_2d"][0]+=1
+        self.install(layout_value=changed)
+        before=self.sample_calls()
+        with self.assertRaisesRegex(DraftError,"Structured layout changed"):
+            self.e.continue_external(state,state.state_id)
+        self.assertEqual(self.sample_calls(),before)
+
+    def test_c4_key_time_changed_stale_go_rejected(self):
+        initial=self.multi_layout(1,10.0,[0.25,0.5,0.75])
+        self.install(layout_value=initial)
+        state=self.draft()
+        changed=self.multi_layout(1,10.0,[0.26,0.5,0.75])
+        self.install(layout_value=changed)
+        with self.assertRaisesRegex(DraftError,"Structured layout changed"):
+            state.verify(state.state_id)
+
+    def test_c5_duration_changed_stale_go_rejected(self):
+        initial=self.multi_layout(1,10.0)
+        self.install(layout_value=initial)
+        state=self.draft()
+        changed=self.multi_layout(1,11.0)
+        self.install(layout_value=changed)
+        with self.assertRaisesRegex(DraftError,"Structured layout changed"):
+            state.verify(state.state_id)
+
+    def test_multikey_metadata_cannot_change_numerical_result_host_double(self):
+        full,_=self.b.sample_external(Noise(self.n.seed),self.g,self.s,self.lat,self.sig)
+        self.install(layout_value=self.multi_layout(2,10.0))
         state=self.draft()
         out=self.e.continue_external(state,state.state_id)
         for a,b in zip(full["samples"].unbind(),out.latent["samples"].unbind()):
