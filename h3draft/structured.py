@@ -12,7 +12,7 @@ import re
 from .contracts import DraftError, digest_json
 
 KEY = "h3_structured_source"
-SCHEMA = "h3_draft_structured_source/1"
+SCHEMA = "h3_draft_structured_source/2"
 LAYOUT_SCHEMA = "h3_structured_canvas/0.9"
 PROVIDER = "H3-Structured-Canvas"
 MAX_TEXT = 128_000
@@ -234,8 +234,42 @@ def canonical_start_layout(layout):
     """Backward-compatible public name; now also retains Phase 3B START→END IR."""
     return canonical_layout(layout)
 
+def _layout_scope(ir):
+    return "start_end" if "transition" in ir else "start"
+
+
+def _layout_hashes(ir):
+    start_view = {
+        "schema": ir.get("schema"),
+        "canvas": ir["canvas"],
+        "boxes": ir["boxes"],
+    }
+    start_hash = digest_json(start_view)
+    if "transition" not in ir:
+        return {
+            "start_hash": start_hash,
+            "end_hash": None,
+            "transition_hash": None,
+            "moved_slots": [],
+        }
+    end_view = {
+        "schema": ir.get("schema"),
+        "canvas": ir["transition"]["end_canvas"],
+        "boxes": ir["transition"]["end_boxes"],
+    }
+    start_geometry = {box["slot"]: box["bbox_2d"] for box in ir["boxes"]}
+    end_geometry = {box["slot"]: box["bbox_2d"] for box in ir["transition"]["end_boxes"]}
+    moved_slots = [slot for slot in start_geometry if start_geometry[slot] != end_geometry[slot]]
+    return {
+        "start_hash": start_hash,
+        "end_hash": digest_json(end_view),
+        "transition_hash": digest_json({"start": start_view, "end": end_view}),
+        "moved_slots": moved_slots,
+    }
+
+
 def make_source(layout, compiled_prompt):
-    ir = canonical_start_layout(layout)
+    ir = canonical_layout(layout)
     if type(compiled_prompt) is not str or not compiled_prompt.strip() or len(compiled_prompt) > MAX_TEXT:
         raise DraftError("Connect the exact nonempty Prompter output (up to 128000 characters).")
     try:
@@ -243,7 +277,7 @@ def make_source(layout, compiled_prompt):
     except UnicodeError as exc:
         raise DraftError("Compiled prompt contains invalid Unicode.") from exc
     return _bounded({"schema": SCHEMA, "provider": PROVIDER, "layout_schema": LAYOUT_SCHEMA,
-                     "scope": "start", "ir": ir, "ir_hash": digest_json(ir),
+                     "scope": _layout_scope(ir), "ir": ir, "ir_hash": digest_json(ir),
                      "compiled_prompt": compiled_prompt, "prompt_hash": prompt_hash})
 
 
@@ -252,7 +286,7 @@ def validate_source(source):
     fields = {"schema", "provider", "layout_schema", "scope", "ir", "ir_hash", "compiled_prompt", "prompt_hash"}
     if (type(data) is not dict or set(data) != fields or data.get("schema") != SCHEMA or
             data.get("provider") != PROVIDER or data.get("layout_schema") != LAYOUT_SCHEMA or
-            data.get("scope") != "start"):
+            data.get("scope") not in ("start", "start_end")):
         raise DraftError("Unsupported structured-source metadata contract; no fields were silently dropped.")
     for key in ("ir_hash", "prompt_hash"):
         if type(data[key]) is not str or not _HEX.fullmatch(data[key]):
@@ -261,7 +295,6 @@ def validate_source(source):
     if digest_json(data) != digest_json(expected):
         raise DraftError("Structured layout or prompt hash does not match its payload.")
     return expected
-
 
 def attach_source(positive, layout, compiled_prompt):
     """Shallow copy only metadata; every conditioning/reference tensor is unchanged."""
@@ -281,7 +314,7 @@ def attach_source(positive, layout, compiled_prompt):
 
 
 def structured_manifest(conds, geometry=None):
-    """Read optional audit data in converted Core GUIDER conditions, not model_conds."""
+    """Read optional Phase 3A/3B audit data from converted Core GUIDER conditions."""
     if type(conds) is not dict:
         raise DraftError("GUIDER conditioning must be a dictionary.")
     items = []
@@ -295,15 +328,31 @@ def structured_manifest(conds, geometry=None):
             canvas = src["ir"]["canvas"]
             if geometry is not None and any(canvas[k] != geometry[k] for k in ("width", "height")):
                 raise DraftError("Structured Canvas size differs from the AV latent. Connect Canvas width/height upstream; no implicit resize.")
-            items.append({"conditioning": branch, "conditioning_index": i,
-                          "provider": src["provider"], "schema": src["layout_schema"], "scope": "start",
-                          "ir_hash": src["ir_hash"], "prompt_hash": src["prompt_hash"],
-                          "slot_count": len(src["ir"]["boxes"]),
-                          "slots": [b["slot"] for b in src["ir"]["boxes"]]})
-    return {"present": bool(items), "contract": SCHEMA, "items": items,
-            "payload_sha256": digest_json(items), "conditioning_reencoded": False,
-            "semantic_accuracy_verified": False, "prompt_binding_verified": False}
-
+            hashes = _layout_hashes(src["ir"])
+            items.append({
+                "conditioning": branch,
+                "conditioning_index": i,
+                "provider": src["provider"],
+                "schema": src["layout_schema"],
+                "scope": src["scope"],
+                "ir_hash": src["ir_hash"],
+                "prompt_hash": src["prompt_hash"],
+                "start_hash": hashes["start_hash"],
+                "end_hash": hashes["end_hash"],
+                "transition_hash": hashes["transition_hash"],
+                "slot_count": len(src["ir"]["boxes"]),
+                "slots": [b["slot"] for b in src["ir"]["boxes"]],
+                "moved_slots": hashes["moved_slots"],
+            })
+    return {
+        "present": bool(items),
+        "contract": SCHEMA,
+        "items": items,
+        "payload_sha256": digest_json(items),
+        "conditioning_reencoded": False,
+        "semantic_accuracy_verified": False,
+        "prompt_binding_verified": False,
+    }
 
 def verify_structured_pair(stored, current):
     a = structured_manifest(stored)
