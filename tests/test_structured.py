@@ -1,4 +1,4 @@
-"""Phase 3A: schema/hash contracts and mocked-host Draft/Continue lifecycle."""
+"""Phase 3A/3B structured layout contracts and mocked-host Draft/Continue lifecycle."""
 import copy
 import importlib.util
 from pathlib import Path
@@ -118,10 +118,44 @@ class StructuredContractTests(unittest.TestCase):
         wrapped = make_source(timeline_wrapped(layout(2), 4), "same")
         self.assertEqual(wrapped, plain)
 
-    def test_real_end_difference_is_not_silently_dropped(self):
+    def test_real_start_end_transition_is_preserved(self):
+        a = timeline_wrapped(layout(2), 3)
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [100, 120, 360, 920]
+        source = make_source(a, "same")
+        self.assertEqual(source["scope"], "start_end")
+        self.assertIn("transition", source["ir"])
+        self.assertEqual(
+            source["ir"]["transition"]["end_boxes"][0]["bbox_2d"],
+            [100, 120, 360, 920],
+        )
+        manifest = structured_manifest({"positive": [{KEY: source}]})
+        item = manifest["items"][0]
+        self.assertEqual(item["scope"], "start_end")
+        self.assertEqual(item["moved_slots"], ["a"])
+        self.assertIsNotNone(item["start_hash"])
+        self.assertIsNotNone(item["end_hash"])
+        self.assertIsNotNone(item["transition_hash"])
+
+    def test_start_end_hash_changes_when_only_end_changes(self):
         a = timeline_wrapped(layout(), 3)
-        a["transition"]["end_boxes"][0]["bbox_2d"][0] += 1
-        with self.assertRaisesRegex(DraftError, "END differs from START"):
+        b = copy.deepcopy(a)
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [100, 100, 360, 900]
+        b["transition"]["end_boxes"][0]["bbox_2d"] = [101, 100, 361, 900]
+        sa = make_source(a, "same")
+        sb = make_source(b, "same")
+        self.assertNotEqual(sa["ir_hash"], sb["ir_hash"])
+        self.assertEqual(sa["prompt_hash"], sb["prompt_hash"])
+
+    def test_start_end_requires_same_slot_set(self):
+        a = timeline_wrapped(layout(2), 3)
+        a["transition"]["end_boxes"].pop()
+        with self.assertRaisesRegex(DraftError, "same A/B/C slot set"):
+            make_source(a, "same")
+
+    def test_start_end_requires_fixed_canvas(self):
+        a = timeline_wrapped(layout(), 3)
+        a["transition"]["end_canvas"]["width"] = 64
+        with self.assertRaisesRegex(DraftError, "one fixed H3 canvas"):
             make_source(a, "same")
 
     def test_explicit_mid_is_not_silently_dropped(self):
@@ -143,13 +177,13 @@ class StructuredContractTests(unittest.TestCase):
             with self.subTest(name=name):
                 a = layout()
                 a[name] = {}
-                with self.assertRaisesRegex(DraftError, "START only"):
+                with self.assertRaisesRegex(DraftError, "Multi-Key phase"):
                     make_source(a, "same")
 
     def test_unknown_transition_metadata_is_not_discarded(self):
         a = timeline_wrapped(layout(), 3)
         a["transition"]["future_field"] = True
-        with self.assertRaisesRegex(DraftError, "unknown transition metadata"):
+        with self.assertRaisesRegex(DraftError, "exactly end_canvas and end_boxes"):
             make_source(a, "same")
 
     def test_overscan_nan_wrong_order_and_boolean_rejected(self):
@@ -225,8 +259,17 @@ class StructuredLifecycleTests(unittest.TestCase):
         self.b,self.n,self.g,self.s,self.sig,self.lat,self.vae=setup()
         self.e=SamplerEngine(self.b)
 
-    def install(self,n=1,text="red hair"):
-        self.g.original_conds["positive"][0][KEY]=make_source(layout(n),text)
+    def install(self,n=1,text="red hair",layout_value=None):
+        source_layout = layout_value if layout_value is not None else layout(n)
+        self.g.original_conds["positive"][0][KEY]=make_source(source_layout,text)
+
+    def transition_layout(self,n=1,delta=80):
+        value = timeline_wrapped(layout(n), 3)
+        for index, box in enumerate(value["transition"]["end_boxes"]):
+            x1,y1,x2,y2 = box["bbox_2d"]
+            shift = delta if index % 2 == 0 else -delta
+            box["bbox_2d"] = [x1+shift,y1,x2+shift,y2]
+        return value
 
     def draft(self):
         return self.e.draft_external(self.n,self.g,self.s,self.sig,self.lat,self.vae,3).state
@@ -255,6 +298,46 @@ class StructuredLifecycleTests(unittest.TestCase):
         self.install(3);state=self.draft()
         out=self.e.continue_external(state,state.state_id)
         self.assertEqual(out.report["structured_layout"]["items"][0]["slots"],["a","b","c"])
+
+    def test_b4_start_end_one_slot_preview_continue(self):
+        self.install(layout_value=self.transition_layout(1))
+        state=self.draft()
+        audit=state.summary()["structured_layout"]
+        item=audit["items"][0]
+        self.assertEqual(item["scope"],"start_end")
+        self.assertEqual(item["moved_slots"],["a"])
+        out=self.e.continue_external(state,state.state_id)
+        self.assertEqual(out.report["structured_layout"],audit)
+        self.assertFalse(out.report["conditioning_reencoded"])
+
+    def test_b5_start_end_three_slots_preview_continue(self):
+        self.install(layout_value=self.transition_layout(3))
+        state=self.draft()
+        out=self.e.continue_external(state,state.state_id)
+        item=out.report["structured_layout"]["items"][0]
+        self.assertEqual(item["scope"],"start_end")
+        self.assertEqual(item["slots"],["a","b","c"])
+        self.assertEqual(item["moved_slots"],["a","b","c"])
+
+    def test_b6_end_bbox_changed_stale_go_rejected_before_sampling(self):
+        initial=self.transition_layout(2)
+        self.install(layout_value=initial)
+        state=self.draft()
+        changed=copy.deepcopy(initial)
+        changed["transition"]["end_boxes"][0]["bbox_2d"][0]+=1
+        self.install(layout_value=changed)
+        before=self.sample_calls()
+        with self.assertRaisesRegex(DraftError,"Structured layout changed"):
+            self.e.continue_external(state,state.state_id)
+        self.assertEqual(self.sample_calls(),before)
+
+    def test_start_end_metadata_cannot_change_numerical_result_host_double(self):
+        full,_=self.b.sample_external(Noise(self.n.seed),self.g,self.s,self.lat,self.sig)
+        self.install(layout_value=self.transition_layout(2))
+        state=self.draft()
+        out=self.e.continue_external(state,state.state_id)
+        for a,b in zip(full["samples"].unbind(),out.latent["samples"].unbind()):
+            self.assertTrue(torch.allclose(a,b,atol=2e-7,rtol=2e-7))
 
     def test_b3_bbox_changed_stale_go_rejected_before_sampling(self):
         self.install();state=self.draft();a=layout();a["boxes"][0]["bbox_2d"][0]+=1
