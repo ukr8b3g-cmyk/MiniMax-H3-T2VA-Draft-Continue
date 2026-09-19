@@ -4,42 +4,52 @@ Date: 2026-09-19.
 
 ## Confirmed GPU evidence
 
-The user confirmed:
-- Core proof of concept Preview 3/6 → Continue 3/6 → final video
-- generic Sampler-level integration works in the real ComfyUI_W environment
-- the Core loader identity fix passes the real workflow
+User-confirmed real ComfyUI/H3 passes:
 
-These establish Phase 1 Generic Draft/Continue as GPU PASS.
+- Phase 0 concept: Preview 3/6 → Continue 3/6 → final video
+- Phase 1 generic Sampler-level integration
+- Core loader identity fix
+- Phase 2 Native Reference Transparency
+- Phase 3A static START structured-layout audit, including Timeline Experimental no-op wrapper compatibility
+- Phase 3A final video generation
 
-## Phase 2 implementation status
+These are real-device execution results. Visual placement quality remains model-dependent and is not converted into a numeric quality certification.
 
-Native Reference Transparency is implemented but not yet GPU-certified.
+## Phase 3B implementation status
 
-Implemented host contracts:
-- no extra Reference input ports
-- native `minimax_refs` stays inside external CONDITIONING
-- reference tensors are snapshotted without re-encoding
-- reference order/kind/shape metadata is reported
-- dedicated reference payload hash is stored
-- content/count/order/metadata changes invalidate stale GO
-- existing whole-conditioning integrity checks remain active
+START→END layout-transition auditing is implemented and host-tested. Real GPU validation is pending.
 
-## Phase 2 R0-R3
+Host contract:
 
-- R0: no Reference baseline
-- R1: one native image Reference
-- R2: multiple native References
-- R3: change Reference content/count/order after Preview and confirm stale GO is rejected
+- static START remains backward compatible
+- real `transition.end_boxes` is preserved
+- START/END use the same A/B/C slot set
+- one fixed Canvas geometry is required
+- explicit MID and Multi-Key remain rejected
+- START/END/prompt changes invalidate stale GO
+- no conditioning tensor rewrite or re-encode is introduced
 
-See [REFERENCE_GATE.md](REFERENCE_GATE.md).
+## Phase 3B GPU gate
 
-## What is and is not certified
+- T0: static START regression → Preview → GO → final video
+- T1: one moving slot START→END → Preview → GO → final video
+- T2: two/three moving slots → Preview → GO → final video
+- T3: after Preview, change only END BBOX → old GO must be rejected before Continue sampling
+- T4: create a new Preview after the END change → GO must complete
 
-- Phase 1 generic Draft/Continue: **user GPU PASS**
-- Core loader identity fix: **user GPU PASS**
-- Phase 2 Native Reference host regression: **CI/host gate**
-- Phase 2 Native Reference real H3 inference: **pending GPU gate**
-- arbitrary samplers/custom guiders/masks/live controls: **not supported**
+The Preview is still Frame 0 / START-oriented. Phase 3B does not claim that a single Preview verifies the final END pose; it verifies that the reviewed Draft is bound to the exact same START→END conditioning contract.
+
+## Remaining boundary
+
+Not yet Phase 3B:
+
+- explicit MID
+- Multi-Key Timeline
+- numeric depth enforcement
+- arbitrary live ControlNet/hooks
+- noise masks
+- custom/multi-model guiders
+- multistep solver-history resume
 
 ## Development tests
 
@@ -48,4 +58,4 @@ PYTHONPATH=.:tests python -m unittest discover -s tests -p 'test_*.py' -v
 node --test tests/*.test.mjs
 ```
 
-Host tests are contract tests and do not replace real MiniMax H3 GPU inference.
+Host tests do not replace real MiniMax H3 GPU inference.
