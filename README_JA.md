@@ -20,7 +20,7 @@ H3 Structured Canvas / Prompter側は、`transition.end_boxes`をモデル向け
 
 Reportには`start_hash / end_hash / transition_hash / moved_slots`を追加します。Preview後にSTART、END、Promptのどれかを変更した場合、古いGOはSampling前に拒否します。
 
-Phase 3Aの静的START経路はそのまま残り、実GPUでPreview → GO → 最終動画までPASS確認済みです。
+Phase 3Aの静的START経路はそのまま残り、実GPUでPreview → GO → 最終動画までPASS確認済みです。**Phase 3BもT0〜T4すべてGPU PASS**です。T1/T2は同じComfyUI backendへのserver queue実行、T0/T3/T4はbrowser workflowを含む実機確認です。主観的なモーション品質は今回の合否対象外です。
 
 ## v1.3.1 — Phase 3A Timeline Experimental互換修正
 
