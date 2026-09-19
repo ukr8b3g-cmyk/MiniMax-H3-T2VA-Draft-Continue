@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.5.0 - 2026-09-19
+
+- Add Phase 3C Multi-Key Timeline Transparency.
+- Accept H3 Structured Canvas `timeline_experimental.version = 4` with up to 7 intermediate keys per A/B/C slot.
+- Preserve normalized key times, BBOX coordinates, duration, START and END geometry without interpolating or rewriting them.
+- Support Timeline Experimental duration from 5.0 to 15.0 seconds and provider minimum key spacing.
+- Validate legacy `mid_boxes` against the v4 key at `t=0.5`, then canonicalize the redundant MID mirror away.
+- Preserve provider offscreen overscan coordinates within -1000..2000 for v4 Multi-Key trajectories.
+- Report `scope=multi_key`, `timeline_hash`, `keyframe_hash`, `key_count`, `key_times`, and `duration_seconds`.
+- Reject stale GO after Key position/time/count/order, Duration, START, END, or compiled-prompt changes.
+- Keep Phase 3A static START and Phase 3B START→END contracts backward compatible.
+- Add Multi-Key host regression gates and a connected Multi-Key workflow example.
+- Real Phase 3C GPU gate is pending.
+
 ## 1.4.0 - 2026-09-19
 
 - Add Phase 3B START → END Layout Transition audit.
