@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0 - 2026-09-19
+
+- Add Phase 3B START → END Layout Transition audit.
+- Preserve model-facing `transition.end_boxes` instead of rejecting real END movement.
+- Keep static/no-op Timeline Experimental wrappers canonicalized to the existing Phase 3A START hash.
+- Require the same A/B/C slot set at START and END and a fixed H3 canvas.
+- Accept known Timeline Experimental v3/v4 wrappers only when MID and Multi-Key data are empty.
+- Report START hash, END hash, transition hash and moved slots.
+- Reject stale GO when START, END or compiled prompt changes after Preview.
+- Add a connected START→END workflow example.
+- Phase 3A static START path remains backward compatible.
+
 ## 1.3.1 - 2026-09-19
 
 - Fix Phase 3A compatibility with Timeline Experimental Canvas auto-serialization.
