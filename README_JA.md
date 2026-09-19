@@ -1,6 +1,26 @@
-# MiniMax H3 Draft Continue — v1.3.1
+# MiniMax H3 Draft Continue — v1.4.0
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## v1.4.0 — Phase 3B START → END Layout Transition
+
+実際のSTART→END BBOX移動を正式に監査対象へ追加しました。
+
+H3 Structured Canvas / Prompter側は、`transition.end_boxes`をモデル向けの`start_bbox / end_bbox`へ変換します。Draft-Continue側ではその上流処理を作り直さず、**同じSTART/END geometryとcompiled promptをStateへ固定**します。
+
+対応範囲:
+
+- A/B/Cの1〜3 slot
+- STARTとENDで同じslot集合
+- Canvas解像度は固定
+- normalized 0..1000 / xyxy
+- Timeline Experimental v3/v4
+- MIDなし
+- Multi-Keyなし
+
+Reportには`start_hash / end_hash / transition_hash / moved_slots`を追加します。Preview後にSTART、END、Promptのどれかを変更した場合、古いGOはSampling前に拒否します。
+
+Phase 3Aの静的START経路はそのまま残り、実GPUでPreview → GO → 最終動画までPASS確認済みです。
 
 ## v1.3.1 — Phase 3A Timeline Experimental互換修正
 
