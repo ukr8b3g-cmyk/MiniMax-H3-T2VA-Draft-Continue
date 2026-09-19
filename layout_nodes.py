@@ -8,9 +8,9 @@ class H3StructuredLayoutAudit:
     FUNCTION = "attach"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("positive",)
-    DESCRIPTION = ("Attach START or START→END layout provenance to existing H3 conditioning. "
+    DESCRIPTION = ("Attach START, START→END, or Multi-Key layout provenance to existing H3 conditioning. "
                    "Connect Canvas layout and the same exact Prompter string used by the text encoder. "
-                   "No text rewrite, encoding, BBOX enforcement or latent modification.")
+                   "No text rewrite, encoding, BBOX interpolation, enforcement or latent modification.")
 
     @classmethod
     def INPUT_TYPES(cls):
