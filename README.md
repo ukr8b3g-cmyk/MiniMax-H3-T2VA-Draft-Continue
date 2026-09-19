@@ -4,6 +4,26 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## v1.5.0 — Multi-Key Timeline Transparency (Phase 3C)
+
+Draft-Continue now audits the H3 Structured Canvas Multi-Key v4 timeline without generating or interpolating keys itself.
+
+Supported contract:
+
+- A/B/C independent tracks
+- START + up to 7 intermediate keys + END per slot
+- `duration_seconds` 5.0–15.0
+- `canonical_time = normalized_0_1`
+- `interpolation = piecewise_linear`
+- provider offscreen overscan up to -1000..2000
+- exact compiled prompt remains bound to the same reviewed Draft
+
+The report adds `scope=multi_key`, `timeline_hash`, `keyframe_hash`, `key_count`, `key_times`, and `duration_seconds`. Changing any key position/time/count/order, Duration, START, END or compiled prompt after Preview invalidates the old GO before Continue sampling.
+
+[Phase 3C GPU gate](docs/PHASE3C_MULTIKEY.md) · [Multi-Key workflow example](examples/H3-MULTI-KEY-Layout-Draft.json)
+
+Phase 3A and 3B remain supported; Phase 3B is already GPU PASS. Phase 3C is implemented and host-tested, with real GPU validation still pending.
+
 ## v1.4.0 — START → END Layout Transition (Phase 3B)
 
 The structured audit now accepts real START→END geometry from H3 Structured Canvas. The upstream Prompter already compiles matching `transition.end_boxes` into model-facing `start_bbox / end_bbox`; Draft-Continue now fingerprints that same transition instead of rejecting it.
