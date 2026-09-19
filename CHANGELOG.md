@@ -11,6 +11,8 @@
 - Reject stale GO when START, END or compiled prompt changes after Preview.
 - Add a connected START→END workflow example.
 - Phase 3A static START path remains backward compatible.
+- GPU gate T0–T4 PASS on RTX 5060 Ti 16 GB; stale END change rejection and re-preview continuation verified.
+- Note: observed T0 peak system RAM was ~62.31 GiB on a ~63.93 GiB machine, so RAM headroom remains a production-hardening warning.
 
 ## 1.3.1 - 2026-09-19
 
