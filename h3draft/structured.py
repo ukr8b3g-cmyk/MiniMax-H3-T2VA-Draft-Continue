@@ -56,17 +56,114 @@ def _bounded(value):
     return out
 
 
-def canonical_start_layout(layout):
-    """Preserve semantic fields; remove only documented Canvas presentation data.
+def _semantic_canvas(canvas):
+    if type(canvas) is not dict:
+        raise DraftError("Structured transition end_canvas must be a dictionary.")
+    return _json_data({k: v for k, v in canvas.items()
+                       if k not in {"grid", "show_boxes", "active_slot", "aspect_ratio"}})
 
-    Numbers are normalized without rounding coordinates. Overscan, transitions,
-    and timelines are not silently folded into a START-only contract.
+
+def _semantic_boxes(boxes):
+    if type(boxes) is not list:
+        raise DraftError("Structured transition end_boxes must be a list.")
+    result = []
+    for box in boxes:
+        if type(box) is not dict:
+            raise DraftError("Structured transition boxes must be dictionaries.")
+        clean = _json_data({k: v for k, v in box.items() if k != "ui_color"})
+        result.append(clean)
+    return sorted(result, key=lambda item: (
+        str(item.get("slot", "")),
+        json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    ))
+
+
+def _keyframes_are_empty(value):
+    if value is None or value == {}:
+        return True
+    if type(value) is not dict:
+        return False
+    return all(type(items) is list and not items for items in value.values())
+
+
+def _strip_noop_timeline_wrappers(layout):
+    """Remove only Timeline Experimental wrappers that are semantically static.
+
+    The Timeline Experimental frontend serializes every loaded Canvas as
+    START -> END, even when the source layout was START-only. Phase 3A may
+    safely collapse that generated wrapper only when END is exactly START and
+    there are no explicit MID/Multi-Key points. Real timeline semantics remain
+    fail-closed for later phases.
+    """
+    if layout.get("timeline") is not None or layout.get("keyframes") is not None:
+        raise DraftError(
+            "Phase 3A audits START only. Real timeline/keyframe data requires a later phase."
+        )
+
+    transition = layout.get("transition")
+    timeline = layout.get("timeline_experimental")
+    if transition is None and timeline is None:
+        return dict(layout)
+
+    start_canvas = layout.get("canvas")
+    start_boxes = layout.get("boxes")
+
+    if transition is not None:
+        if type(transition) is not dict or not set(transition) <= {"end_canvas", "end_boxes"}:
+            raise DraftError(
+                "Phase 3A cannot discard unknown transition metadata. Use a static/no-op timeline wrapper."
+            )
+        end_canvas = transition.get("end_canvas", start_canvas)
+        end_boxes = transition.get("end_boxes", start_boxes)
+        if (_semantic_canvas(end_canvas) != _semantic_canvas(start_canvas) or
+                _semantic_boxes(end_boxes) != _semantic_boxes(start_boxes)):
+            raise DraftError(
+                "Phase 3A audits START only. END differs from START; use the START→END phase."
+            )
+
+    if timeline is not None:
+        if type(timeline) is not dict:
+            raise DraftError("timeline_experimental must be a dictionary.")
+        version = timeline.get("version")
+        allowed = {
+            "version", "slots", "duration_seconds", "interpolation",
+            "canonical_time", "mid_time", "mid_boxes", "coordinate_space",
+            "max_intermediate_keys", "keyframes",
+        }
+        if not set(timeline) <= allowed:
+            raise DraftError(
+                "Phase 3A cannot discard unknown Timeline Experimental metadata."
+            )
+        if version not in (3, 4):
+            raise DraftError(
+                "Phase 3A accepts only known Timeline Experimental v3/v4 no-op wrappers."
+            )
+        mid_boxes = timeline.get("mid_boxes")
+        if mid_boxes not in (None, []):
+            raise DraftError(
+                "Phase 3A audits START only. Explicit MID data requires a later timeline phase."
+            )
+        if not _keyframes_are_empty(timeline.get("keyframes")):
+            raise DraftError(
+                "Phase 3A audits START only. Multi-Key data requires the Multi-Key phase."
+            )
+
+    clean = dict(layout)
+    clean.pop("transition", None)
+    clean.pop("timeline_experimental", None)
+    return clean
+
+
+def canonical_start_layout(layout):
+    """Canonical START IR with safe no-op Timeline Experimental compatibility.
+
+    Numbers are normalized without rounding coordinates. Only a frontend-added
+    timeline wrapper whose END equals START and which contains no MID/Multi-Key
+    data is collapsed. Any real END/MID/keyframe semantics fail closed.
     """
     if type(layout) is not dict or layout.get("schema") != LAYOUT_SCHEMA:
         raise DraftError(f"Connect Canvas H3_LAYOUT with schema {LAYOUT_SCHEMA}.")
-    for key in ("transition", "timeline_experimental", "timeline", "keyframes"):
-        if layout.get(key) is not None:
-            raise DraftError("Phase 3A audits START only. END/Multi-Key data must not be discarded; use a static Canvas layout.")
+    layout = _strip_noop_timeline_wrappers(layout)
     # Image sidecars are already handled by the upstream native Reference path.
     clean = {k: v for k, v in layout.items() if k not in {"_h3_slot_images", "warnings"}}
     canvas = clean.get("canvas")
@@ -102,7 +199,6 @@ def canonical_start_layout(layout):
         clean_boxes.append({k: v for k, v in box.items() if k != "ui_color"})
     clean["boxes"] = clean_boxes
     return _bounded(clean)
-
 
 def make_source(layout, compiled_prompt):
     ir = canonical_start_layout(layout)
