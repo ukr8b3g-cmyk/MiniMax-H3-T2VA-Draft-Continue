@@ -4,6 +4,25 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## v1.4.0 — START → END Layout Transition (Phase 3B)
+
+The structured audit now accepts real START→END geometry from H3 Structured Canvas. The upstream Prompter already compiles matching `transition.end_boxes` into model-facing `start_bbox / end_bbox`; Draft-Continue now fingerprints that same transition instead of rejecting it.
+
+Supported Phase 3B contract:
+
+- 1–3 slots A/B/C
+- same slot set at START and END
+- fixed Canvas width/height and normalized 0..1000 xyxy coordinates
+- known Timeline Experimental v3/v4 wrapper
+- no explicit MID
+- no Multi-Key keyframes
+
+The report adds `start_hash`, `end_hash`, `transition_hash`, and `moved_slots`. Changing START, END or the exact compiled prompt after Preview invalidates the old GO before Continue sampling.
+
+[Phase 3B details](docs/PHASE3B_START_END.md) · [START→END workflow example](examples/H3-START-END-Layout-Draft.json)
+
+Phase 3A static START + Timeline no-op compatibility remains supported and has user-confirmed GPU/video PASS.
+
 ## v1.3.1 — START layout audit + Timeline Experimental compatibility
 
 Timeline Experimental automatically serializes a loaded static Canvas as `transition + timeline_experimental`. v1.3.1 accepts that wrapper only when it is semantically a no-op: END must equal START and there must be no explicit MID or Multi-Key data. The wrapper is then canonicalized to the same START IR/hash as the original static Canvas.
@@ -18,7 +37,7 @@ Connect the same Prompter STRING to the native H3 conditioner and the audit node
 
 [START wiring and scope](docs/STRUCTURED_LAYOUT.md) · [日本語ガイド](docs/PHASE3A_JA.md) · [UI workflow example](examples/H3-START-Layout-Draft.json)
 
-Phase 3A supports 1–3 static START boxes in A/B/C. END/Multi-Key data is not silently stripped. New CPU/host tests are provided; actual Phase 3A ComfyUI/GPU and visual placement verification are pending.
+Phase 3A supports 1–3 static START boxes in A/B/C and has user-confirmed Preview → GO → final-video GPU PASS. Real END movement is handled by Phase 3B; MID/Multi-Key remains later.
 
 ## v1.2.0 — Native Reference Transparency
 
