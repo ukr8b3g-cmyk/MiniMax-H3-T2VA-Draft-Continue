@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.1 - 2026-09-19
+
+- Fix Phase 3A compatibility with Timeline Experimental Canvas auto-serialization.
+- Accept only semantically static v3/v4 wrappers where END exactly equals START and MID/Multi-Key data is empty.
+- Canonicalize those no-op wrappers to the same START IR/hash as the original static Canvas.
+- Continue to fail closed when END differs, explicit MID exists, Multi-Key data exists, or unknown timeline/transition metadata would be discarded.
+- Add regression tests reproducing the frontend-added `transition` / `timeline_experimental` wrapper.
+- GitHub Actions CPU and workflow contracts pass; real Phase 3A GPU/UI rerun remains required.
+
+## 1.3.0 - 2026-09-19
+
+- Add optional START-layout audit for H3 Structured Canvas without changing Draft/Continue sampler ports.
+- Attach exact compiled-prompt provenance and canonical START layout metadata to CONDITIONING.
+- Reject stale GO after audited layout or compiled prompt changes.
+- Keep Reference handling, sampling math and conditioning tensors unchanged.
+
 ## 1.2.0 - 2026-09-19
 
 - Add Phase 2 Native Reference Transparency for MiniMax H3.
