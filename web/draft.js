@@ -1,9 +1,55 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import {
+import * as H3Logic from "./logic.mjs?v=1.6.0";
+
+const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
-  DRAFT_CLASSES, CONTINUE_CLASSES, externalSeedTarget, reviewUiState,
-} from "./logic.mjs";
+  DRAFT_CLASSES, CONTINUE_CLASSES, externalSeedTarget,
+} = H3Logic;
+
+const reviewUiState = H3Logic.reviewUiState ?? ((input = {}) => {
+  const phase = input.phase ?? "preview_required";
+  const current = Number.isInteger(input.currentStep) ? input.currentStep : 0;
+  const total = Number.isInteger(input.totalSteps) ? input.totalSteps : 0;
+  const remaining = Math.max(0, total - current);
+  const locked = {
+    state: phase, kind: "idle",
+    draft: { title: "PREVIEW REQUIRED", detail: "Review Frame 0 before GO." },
+    continue: { title: "WAITING FOR PREVIEW", detail: "Generate and review a Preview first." },
+    canPreview: true, canReroll: true, canGo: false,
+  };
+  if (phase === "ready") return {
+    ...locked, kind: "ready", canGo: true,
+    draft: { title: total ? `READY · ${current}/${total}` : "READY", detail: "Frame 0 preview · estimate" },
+    continue: { title: "READY TO GO", detail: total ? `${remaining} sampling steps remaining` : "Continue the reviewed Draft State" },
+  };
+  if (phase === "preview_queued") return {
+    ...locked, kind: "busy", canPreview: false, canReroll: false,
+    draft: { title: "PREVIEW RUNNING", detail: "Generating Frame 0 from the full-length H3 latent." },
+    continue: { title: "WAITING", detail: "GO unlocks after Preview completes." },
+  };
+  if (phase === "stale") return {
+    ...locked, kind: "warning",
+    draft: { title: "PREVIEW STALE", detail: input.message || "Settings changed after Preview." },
+    continue: { title: "NEW PREVIEW REQUIRED", detail: "GO is locked until Preview is regenerated." },
+  };
+  if (phase === "continue_queued") return {
+    ...locked, kind: "busy", canPreview: false, canReroll: false,
+    draft: { title: "REVIEWED", detail: "The approved Draft State is continuing." },
+    continue: { title: "CONTINUING", detail: total ? `Resume ${current}/${total} · ${remaining} steps remaining` : "Continuing reviewed state" },
+  };
+  if (phase === "complete") return {
+    ...locked, kind: "ready",
+    draft: { title: "REVIEWED", detail: "Preview/approval cycle completed." },
+    continue: { title: "COMPLETE", detail: input.message || "Reviewed Draft State completed." },
+  };
+  if (phase === "error") return {
+    ...locked, kind: "error",
+    draft: { title: "REVIEW ERROR", detail: input.message || "Preview/Continue failed." },
+    continue: { title: "NOT READY", detail: "Generate a new Preview before GO." },
+  };
+  return locked;
+});
 
 const DRAFT="H3T2VADraft";
 const outputTypes=new Set(["SaveVideo","SaveImage","PreviewImage","SaveAnimatedWEBP","PreviewAny"]);
@@ -211,6 +257,12 @@ async function queue(node,action){
 app.registerExtension({
   name:"MiniMax.H3.DraftContinue",
   setup(){
+    globalThis.__H3_DRAFT_CONTINUE_UI__ = {
+      loaded: true,
+      version: "1.6.0",
+      logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
+    };
+    console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
     if(!document.getElementById("h3-draft-style")){
       const css=document.createElement("style");
       css.id="h3-draft-style";
