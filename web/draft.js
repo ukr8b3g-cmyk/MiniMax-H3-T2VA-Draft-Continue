@@ -1,7 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.4";
-import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.4";
+import * as H3Logic from "./logic.mjs?v=1.7.5";
+import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.5";
+import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.5";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -76,6 +77,7 @@ const isDraft=node=>DRAFT_CLASSES.has(node?.comfyClass??node?.type);
 const isContinue=node=>CONTINUE_CLASSES.has(node?.comfyClass??node?.type);
 const pending=new Map();
 const workflowRuntime=new WeakMap();
+let frontendGuard=null;
 let staleCheckTimer=null;
 let staleCheckRunning=false;
 const widget=(node,name)=>node?.widgets?.find(w=>w.name===name);
@@ -210,6 +212,14 @@ function reviewInput(draft){
 
 function applyPanel(node,role,ui){
   if(!node?._h3Panel)return;
+  const verified=frontendGuard?.state.status==="verified";
+  if(!verified){
+    ui={...ui,kind:"warning",canPreview:false,canReroll:false,canGo:false,
+      draft:{title:"UI CHECK REQUIRED",detail:frontendGuard?.state.message??"Checking loaded frontend…"},
+      continue:{title:"UI CHECK REQUIRED",detail:frontendGuard?.state.message??"Checking loaded frontend…"}};
+  }
+  const badge=node._h3Panel.querySelector(".h3-ui-build");
+  if(badge)badge.textContent=verified?"UI 1.7.5 · VERIFIED":"UI 1.7.5 · NOT VERIFIED";
   const block=role==="draft"?ui.draft:ui.continue;
   node._h3Panel.dataset.kind=ui.kind;
   node._h3Panel.querySelector("strong").textContent=block.title;
@@ -284,6 +294,13 @@ function buildPanel(node,draftRole){
   panel.className="h3-draft-status";
   panel.appendChild(document.createElement("strong"));
   panel.appendChild(document.createElement("small"));
+  const badge=actionButton("Check UI",()=>{
+    if(frontendGuard)void frontendGuard.verify().catch(error=>console.warn("[H3 Draft Continue]",error.message));
+  });
+  badge.title="Verify loaded UI against backend without generating or reloading";
+  badge.className="h3-ui-build";
+  badge.style.cssText="display:block;font-size:10px;margin-top:3px";
+  panel.appendChild(badge);
   const actions=document.createElement("div");
   actions.className="h3-draft-actions";
   panel.appendChild(actions);
@@ -301,7 +318,7 @@ function buildPanel(node,draftRole){
   }
   node._h3Panel=panel;
   const dom=node.addDOMWidget("h3_status","h3_status",panel,{serialize:false});
-  dom.computeSize=()=>[0,draftRole?110:104];
+  dom.computeSize=()=>[0,draftRole?128:122];
   return panel;
 }
 
@@ -309,6 +326,8 @@ async function queue(node,action){
   if(node._h3Pending)return;
   node._h3Pending=true;
   try{
+    if(!frontendGuard)throw new Error("H3 frontend guard is not initialized. Protect workflows and reload the page.");
+    await frontendGuard.verify();
     const p=await app.graphToPrompt();
     const id=String(node.id);
     let output;
@@ -373,7 +392,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.4",
+      version: "1.7.5",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -402,6 +421,17 @@ app.registerExtension({
       lifecycleBridge.alreadyInstalled?"loadGraphData-wrapper-existing":
       "unavailable";
     console.info("[H3 Draft Continue] Lifecycle bridge",globalThis.__H3_DRAFT_CONTINUE_UI__.lifecycleBridge);
+
+    frontendGuard=installFrontendGuard({api,app,runtime:globalThis.__H3_DRAFT_CONTINUE_UI__,
+      onChange(){
+        for(const node of app.rootGraph?._nodes??[]){
+          if(isDraft(node))syncDraft(node);
+          else if(isContinue(node)&&!directDraftForContinue(node))standalonePhase(node,"preview_required");
+        }
+      },
+    });
+    globalThis.__H3_DRAFT_CONTINUE_UI__.checkFrontend=()=>frontendGuard.verify();
+    void frontendGuard.verify().catch(error=>console.warn("[H3 Draft Continue]",error.message));
 
     if(!document.getElementById("h3-draft-style")){
       const css=document.createElement("style");
