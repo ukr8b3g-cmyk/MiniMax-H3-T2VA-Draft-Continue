@@ -1,6 +1,6 @@
 # Phase 3C — Multi-Key Timeline GPU Gate
 
-Status: implementation complete, host regression PASS, real H3 GPU validation pending.
+Status: **GPU PASS** — 2026-09-20 JST.
 
 ## Scope
 
@@ -16,7 +16,7 @@ Phase 3C audits H3 Structured Canvas Timeline Experimental v4.
 
 ## Report
 
-Expected `structured_layout.items[*]` fields:
+`structured_layout.items[*]` includes:
 
 - `scope = multi_key`
 - `start_hash`
@@ -28,57 +28,91 @@ Expected `structured_layout.items[*]` fields:
 - `key_times`
 - `duration_seconds`
 
-## GPU gate
+## GPU gate result
 
 ### M0 — Phase 3B regression
-Run the already-passing START→END case. Expected: Preview → GO → final media.
+
+**PASS.**
+
+Existing START→END behavior remained intact.
 
 ### M1 — one slot / three keys
-A only, keys at roughly 0.25 / 0.50 / 0.75.
 
-Expected:
-- Preview succeeds
-- `scope = multi_key`
-- `key_count = 3`
-- GO succeeds
-- final media succeeds
+**PASS.**
+
+One-slot Multi-Key Preview → Continue → final media completed.
 
 ### M2 — two slots / three keys each
-A/B with independent trajectories.
 
-Expected:
-- `key_count = 6`
-- per-slot `key_times` present
-- Preview → GO → final media succeeds
+**PASS.**
+
+A/B independent Multi-Key trajectories completed Preview → Continue → final media.
 
 ### M3 — maximum seven keys
-Use one slot with 7 intermediate keys.
 
-Expected:
-- `key_count = 7`
-- Preview → GO → final media succeeds
+**PASS.**
 
-### M4 — stale Key edit
-After Preview, change only one intermediate Key BBOX.
+A one-slot trajectory with seven intermediate keys completed successfully.
 
-Expected:
-- old GO rejected before Continue sampling
-- no queued continuation
+### M4 — stale Key BBOX edit
 
-### M5 — stale Key-time or Duration edit
-After Preview, change one Key time or Duration.
+**PASS.**
 
-Expected:
-- old GO rejected before Continue sampling
+Changing an intermediate Key BBOX after Preview caused the old GO to be rejected before continuation.
+
+### M5A — stale Key-time edit
+
+**PASS.**
+
+Changing a Key time after Preview caused the old GO to be rejected.
+
+### M5B — stale Duration edit
+
+**PASS.**
+
+Changing Duration after Preview caused the old GO to be rejected.
 
 ### M6 — re-preview
-After M4/M5 change, create a fresh Preview and GO.
 
-Expected:
-- new State completes final media
+**PASS.**
 
-## Pass condition
+After the changed Key-time state was re-Previewed:
 
-M0–M6 PASS establishes Phase 3C GPU integration PASS.
+- the changed Key time was reflected in the new Preview state
+- Continue resumed at `3/6`
+- no new noise was introduced
+- conditioning was not re-encoded
+- schedule was not rebuilt
+- final video save completed
 
-Subjective path-following/motion quality is recorded separately and is not required for the correctness PASS.
+## Duration / frame-grid observation
+
+A 7.5-second timeline setting produced:
+
+- 192 frames
+- 8.0 seconds output
+
+after H3-valid frame alignment.
+
+This does not invalidate the gate: Phase 3C certifies that the reviewed Multi-Key/Duration contract is bound to the resumed Draft State. Exact frame-grid duration is governed by the H3-valid frame conversion upstream.
+
+## Stability
+
+- queue empty after tests
+- no OOM
+- no crash
+- workflow not saved
+- implementation code not modified during testing
+
+Observed peak resource usage:
+
+- system RAM: ~59.35 / 63.93 GiB
+- VRAM: ~15.40 / 15.93 GiB
+
+The gate passed, but resource headroom is limited and remains a production-hardening concern.
+
+## Verdict
+
+**Phase 3C Multi-Key Timeline GPU integration: PASS.**
+
+Subjective path-following/motion quality was intentionally not graded and remains separate from the correctness verdict.
