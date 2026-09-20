@@ -108,3 +108,12 @@ The existing node-level `onExecuted` report path remains in place and can still 
 
 Only A4 needs targeted real-browser retest after this fix.
 
+
+## A4 second-retest ordering fix
+
+A second A4 run again completed Continue and SaveVideo successfully but returned the UI to `READY TO GO`.
+
+The successful Queue history contained both a Draft `ready` report and a Continue `complete` report. The frontend contract is therefore tightened so Draft `ready` cannot change UI state while the synchronized pair is in `continue_queued` or `complete`.
+
+`COMPLETE` is now terminal until the user explicitly starts a new Preview. Starting Preview moves the state to `preview_queued`, after which the new Draft `ready` report is accepted normally.
+
