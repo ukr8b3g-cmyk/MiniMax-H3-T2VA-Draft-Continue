@@ -72,21 +72,43 @@ No OOM, NaN, crash, or failed GPU execution occurred.
 
 Resource headroom is limited and remains a production-hardening concern.
 
-## Remaining browser stale-state gate
+## Browser stale-state gate
 
-D5–D9 were not executed because Chrome blocked temporary local ComfyUI tabs with `ERR_BLOCKED_BY_CLIENT`.
+D5–D9: **PASS**.
 
-Pending browser/UI cases:
+The tests used a separate unsaved browser workflow tab. After a valid Preview, one approved input was changed and the existing GO control was used.
 
-- D5 — change Reference image after Preview; old GO must be rejected before Queue
-- D6 — change Reference order after Preview; old GO must be rejected
-- D7 — change START/END or intermediate-Key BBOX after Preview; old GO must be rejected
-- D8 — change Key time or Duration after Preview; old GO must be rejected
-- D9 — change compiled prompt after Preview; old GO must be rejected
+| Case | Mutation after Preview | Result |
+| --- | --- | --- |
+| D5 | Reference A image changed | stale GO rejected before Queue |
+| D6 | Reference A/C assignments swapped | stale GO rejected before Queue |
+| D7 | A-Key 1 BBOX changed | stale GO rejected before Queue |
+| D8a | A-Key 1 time changed | stale GO rejected before Queue |
+| D8b | Duration changed | stale GO rejected before Queue |
+| D9 | scene/prompt text changed | stale GO rejected before Queue |
 
-The existing user ComfyUI tab/workflow was intentionally left untouched.
+For every stale attempt:
 
-Direct API execution validates the server-side combined generation path, but it does not prove the requested frontend pre-queue stale-GO behavior.
+- UI requested a new Preview
+- no continuation request entered Queue
+- running = 0
+- pending = 0
+- no Continue sampling started
+
+Observed browser Preview-setup peaks:
+
+- system RAM: ~59.98 / 63.93 GiB
+- VRAM: ~15.42 / 15.93 GiB
+
+No OOM or crash occurred.
+
+## Remaining qualification
+
+Still not verified:
+
+- valid browser GO → Continue → Save using the combined workflow
+- saved-workflow reload followed by valid Preview/GO
+- subjective identity/trajectory quality
 
 ## Quality boundary
 
@@ -101,7 +123,9 @@ Not graded in this gate:
 ## Verdict
 
 - GPU/API combined integration: **PASS**
-- Browser stale-state rejection: **PENDING**
+- Browser stale-state rejection: **PASS (D5–D9)**
+- Browser valid-GO/save/reload: **PENDING**
+- Subjective visual quality: **NOT GRADED**
 - Phase 3D overall: **PARTIAL**
 
-Full Phase 3D PASS requires the remaining D5–D9 browser stale-state checks, or an explicitly equivalent browser/frontend gate.
+Full Phase 3D PASS remains intentionally withheld until the remaining browser valid-GO/save/reload workflow is verified and, if required by the release gate, the separate visual-quality review is completed.
