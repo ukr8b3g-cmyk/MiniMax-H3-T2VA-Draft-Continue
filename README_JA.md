@@ -6,11 +6,11 @@
 
 Phase 2のNative ReferenceとPhase 3CのMulti-Keyを、同じ実GPU生成で組み合わせて検証しました。
 
-**GPU/API実行は8/8 PASS、Phase 3D全体はPARTIALです。**
+**Phase 3DはGPU PASS / COMPLETEです。**
 
 Static START、START→END、3 Key、7 Key、2 References、疎なA+C References、Key時刻変更後の再Preview→Continueまで完走しています。全実行ケースでstep 3から再開し、新規noise、conditioning再encode、Reference再encode、schedule再構築はありませんでした。
 
-その後、D5〜D9のブラウザーstale-GO Gateも**すべてPASS**しました。Reference変更/順序入替、BBOX、Key時刻、Duration、Prompt変更はいずれも「新しいPreviewが必要」と拒否され、Queueは0/0のままでSamplingは開始していません。その後、通常のブラウザーPreview→GO→Continue→Saveと、保存Workflowを閉じて再読込した後のfresh Preview→GO→Continue→Saveも**G11/G12でPASS**しました。これでruntime/integration Gateはすべて閉じています。Phase 3D全体は、人物同一性・軌道追従などの主観画質Gateが未評価のためPARTIALのままです。
+その後、D5〜D9のブラウザーstale-GO Gateも**すべてPASS**し、通常のブラウザーPreview→GO→Continue→Saveと、保存Workflow再読込後のfresh Preview→GO→Continue→Saveも**G11/G12でPASS**しました。さらに、別途定義したPhase 3DのVisual Quality Gateも**ユーザー確認でPASS**しました。これでPhase 3Dの全Gateが閉じています。
 
 ## v1.5.0 — Phase 3C Multi-Key Timeline Transparency
 
