@@ -97,11 +97,11 @@ Observed Phase 3C peaks:
 
 Both passed without OOM, but remaining resource headroom is small and should remain a production-hardening concern.
 
-## Phase 3D combined Reference + Structured integration — PARTIAL
+## Phase 3D combined Reference + Structured integration — GPU PASS / COMPLETE
 
 Date: 2026-09-20 JST.
 
-Overall status: **PARTIAL**.
+Overall status: **GPU PASS / COMPLETE**.
 
 GPU/API integration matrix: **PASS (8/8 executed cases)**.
 
@@ -224,6 +224,7 @@ Therefore:
 - Phase 3D visual-quality gate: **PASS (user-confirmed)**
 - Phase 3D runtime/integration qualification: **PASS**
 - Phase 3D overall: **GPU PASS / COMPLETE**
+- Phase 4A Preview / GO State UX: **GPU/UI PASS / COMPLETE (A0–A7)**
 
 ## Current certification
 
@@ -253,7 +254,7 @@ Not yet covered:
 
 ## Phase 4A — Preview / GO State UX
 
-Implementation status: **implemented on main; browser GPU/UI gate pending**.
+Implementation status: **GPU/UI PASS / COMPLETE**.
 
 Phase 4A changes only frontend review UX. Backend sampling and state contracts are unchanged.
 
@@ -376,4 +377,42 @@ Main follow-up fix:
 - add regression tests proving a late Draft `ready` cannot reopen GO after Continue
 
 A4 remains pending one targeted browser retest.
+
+
+### Phase 4A final A4 retest — PASS
+
+The terminal-state ordering fix passed on real browser/GPU.
+
+A4 final retest:
+
+- Preview: 70.1 s, `READY · 3/6`
+- Continue: resumed from step 3 for the remaining 3 transitions, 36.1 s
+- no new noise
+- no conditioning re-encode
+- no schedule rebuild
+- no Reference re-encode
+- SaveVideo succeeded and was retrievable over HTTP 200
+- final Draft UI: `REVIEWED`
+- final Continue UI: `COMPLETE`
+- GO remained disabled
+- final Queue: 0 running / 0 pending
+- no OOM
+
+Observed peak during the final A4 retest:
+
+- system RAM ~60.7 / 63.9 GiB
+- VRAM ~15.5 / 15.9 GiB
+
+With the previously confirmed A0–A3 and A5–A7 results, the complete Phase 4A browser UX gate is now:
+
+- A0 PASS
+- A1 PASS
+- A2 PASS
+- A3 PASS
+- A4 PASS
+- A5 PASS
+- A6 PASS
+- A7 PASS
+
+Therefore Phase 4A Preview / GO State UX is **GPU/UI PASS / COMPLETE**.
 
