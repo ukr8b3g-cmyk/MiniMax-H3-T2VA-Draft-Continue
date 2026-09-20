@@ -167,9 +167,9 @@ export function reviewUiState(input = {}) {
 
 
 export function acceptDraftReadyReport(currentPhase, incomingStateId="", approvedStateId="") {
-  if (currentPhase === "continue_queued" || currentPhase === "complete") {
-    if (!approvedStateId) return false;
-    return incomingStateId !== approvedStateId;
-  }
+  // COMPLETE is terminal until an explicit new Preview moves the UI back to
+  // preview_queued. Cached/late Draft ready reports from a Continue request
+  // must never reopen GO.
+  if (currentPhase === "continue_queued" || currentPhase === "complete") return false;
   return true;
 }
