@@ -12,7 +12,7 @@ Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser 
 
 While a Draft is `READY`, ComfyUI's `graphChanged` event now triggers a debounced upstream signature re-check. Execution-relevant edits immediately move the UI to `PREVIEW STALE / NEW PREVIEW REQUIRED`; the existing GO-time signature check remains the final guard.
 
-Phase 4B remains PARTIAL. B3 live stale detection is GPU/browser PASS. B2/B7 were traced to ComfyUI Frontend 1.52.7 not invoking the newer `beforeLoadGraph / afterLoadGraph` hooks. v1.7.4 adds a backward-compatible `app.loadGraphData()` lifecycle bridge while retaining `changeTracker`-keyed session state. B4/B5/B8/B9/B10 remain pending.
+Phase 4B remains PARTIAL, but the v1.7.4 browser retest on ComfyUI Frontend 1.52.7 now has B2/B3/B7 PASS. READY and COMPLETE survive open-tab round-trips, and live upstream edits invalidate READY to STALE. B4/B5/B8/B9/B10 remain pending.
 
 ## v1.6.0 — Preview / GO State UX (Phase 4A)
 
