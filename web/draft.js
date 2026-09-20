@@ -78,6 +78,7 @@ const workflowRuntime=new Map();
 let activeWorkflowPath=null;
 let staleCheckTimer=null;
 let staleCheckRunning=false;
+let pruneTimer=null;
 const widget=(node,name)=>node?.widgets?.find(w=>w.name===name);
 
 function errorText(error){
@@ -127,10 +128,23 @@ function openWorkflowPaths(){
 
 function pruneClosedWorkflowRuntime(){
   const open=openWorkflowPaths();
-  if(!open.size)return;
+  if(!open.size){
+    workflowRuntime.clear();
+    activeWorkflowPath=null;
+    return;
+  }
   for(const path of workflowRuntime.keys()){
     if(!open.has(path))workflowRuntime.delete(path);
   }
+  if(activeWorkflowPath&&!open.has(activeWorkflowPath))activeWorkflowPath=null;
+}
+
+function schedulePruneClosedWorkflowRuntime(){
+  if(pruneTimer)clearTimeout(pruneTimer);
+  pruneTimer=setTimeout(()=>{
+    pruneTimer=null;
+    pruneClosedWorkflowRuntime();
+  },180);
 }
 
 function rememberActiveRuntime(){
@@ -421,7 +435,7 @@ app.registerExtension({
     }
 
     if(document.body){
-      const observer=new MutationObserver(()=>pruneClosedWorkflowRuntime());
+      const observer=new MutationObserver(()=>schedulePruneClosedWorkflowRuntime());
       observer.observe(document.body,{childList:true,subtree:true});
     }
 
@@ -454,7 +468,7 @@ app.registerExtension({
       activeWorkflowPath=path;
       const restored=restoreRuntime(path);
       if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.",path);
-      pruneClosedWorkflowRuntime();
+      schedulePruneClosedWorkflowRuntime();
     });
   },
 
