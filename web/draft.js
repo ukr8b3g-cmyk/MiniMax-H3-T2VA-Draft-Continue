@@ -7,8 +7,8 @@ const {
   DRAFT_CLASSES, CONTINUE_CLASSES, externalSeedTarget,
 } = H3Logic;
 
-const acceptDraftReadyReport = H3Logic.acceptDraftReadyReport ?? ((phase,incoming,approved) => {
-  if (phase === "continue_queued" || phase === "complete") return approved ? incoming !== approved : false;
+const acceptDraftReadyReport = H3Logic.acceptDraftReadyReport ?? ((phase) => {
+  if (phase === "continue_queued" || phase === "complete") return false;
   return true;
 });
 
