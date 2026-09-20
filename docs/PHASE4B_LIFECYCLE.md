@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: implementation on main; GPU/browser gate **PARTIAL / retest pending**.
+Status: v1.7.1 implementation on main; GPU/browser gate **PARTIAL / retest pending**.
 
 ## Purpose
 
@@ -73,3 +73,18 @@ B4/B5/B8/B9/B10 were not run.
 4. continue remaining B4/B5/B8/B9/B10 matrix
 
 Backend sampler/state math is unchanged.
+
+
+## v1.7.1 lifecycle correction
+
+The original WeakMap implementation was invalid for current ComfyUI because `loadGraphData()` clones the workflow JSON before extension `beforeConfigureGraph` hooks and clears the outgoing graph before that hook.
+
+v1.7.1 instead:
+
+- captures the outgoing graph in `beforeLoadGraph`
+- stores stable review phases under the active workflow tab path
+- restores them in `afterLoadGraph`
+- removes cached state when that tab is closed
+- adds DOM/LiteGraph interaction-triggered signature checks in addition to `graphChanged`
+
+This specifically targets B2, B3 and B7 while keeping close/reopen approval reset intact.
