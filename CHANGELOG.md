@@ -12,7 +12,10 @@
 - Reject stale GO after Key position/time/count/order, Duration, START, END, or compiled-prompt changes.
 - Keep Phase 3A static START and Phase 3B START→END contracts backward compatible.
 - Add Multi-Key host regression gates and a connected Multi-Key workflow example.
-- Real Phase 3C GPU gate is pending.
+- GPU gate M0–M6 PASS on RTX 5060 Ti 16 GB.
+- Verified stale Key-BBOX, Key-time, and Duration edits reject old GO; fresh Preview then resumes from step 3 and completes.
+- 7.5 s timeline produced 192 frames / 8.0 s after H3-valid frame alignment.
+- Observed peak system RAM ~59.35 / 63.93 GiB and VRAM ~15.40 / 15.93 GiB; memory headroom remains a production-hardening warning.
 
 ## 1.4.0 - 2026-09-19
 
