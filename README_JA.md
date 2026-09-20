@@ -2,6 +2,16 @@
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
 
+## Phase 3D — Reference + Structured Combined Integration
+
+Phase 2のNative ReferenceとPhase 3CのMulti-Keyを、同じ実GPU生成で組み合わせて検証しました。
+
+**GPU/API実行は8/8 PASS、Phase 3D全体はPARTIALです。**
+
+Static START、START→END、3 Key、7 Key、2 References、疎なA+C References、Key時刻変更後の再Preview→Continueまで完走しています。全実行ケースでstep 3から再開し、新規noise、conditioning再encode、Reference再encode、schedule再構築はありませんでした。
+
+ただしD5〜D9のブラウザー上のstale GO拒否確認は、ChromeがローカルComfyUIタブを`ERR_BLOCKED_BY_CLIENT`で遮断したため未実施です。そのためPhase 3D全体はまだPASSに上げません。人物同一性や軌道品質も今回の判定対象外です。
+
 ## v1.5.0 — Phase 3C Multi-Key Timeline Transparency
 
 H3 Structured CanvasのMulti-Key Timeline v4を正式に監査対象へ追加しました。
