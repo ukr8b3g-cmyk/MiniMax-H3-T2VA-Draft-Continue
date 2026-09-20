@@ -7,6 +7,11 @@ const {
   DRAFT_CLASSES, CONTINUE_CLASSES, externalSeedTarget,
 } = H3Logic;
 
+const acceptDraftReadyReport = H3Logic.acceptDraftReadyReport ?? ((phase,incoming,approved) => {
+  if (phase === "continue_queued" || phase === "complete") return approved ? incoming !== approved : false;
+  return true;
+});
+
 const reviewUiState = H3Logic.reviewUiState ?? ((input = {}) => {
   const phase = input.phase ?? "preview_required";
   const current = Number.isInteger(input.currentStep) ? input.currentStep : 0;
@@ -215,6 +220,7 @@ async function queue(node,action){
         Object.assign(p,fresh);
       }
       output=branch(p.output,[id]);
+      node._h3ApprovedStateId=null;
       setDraftPhase(node,"preview_queued",{clearReady:true,message:"",wall:null});
     }else{
       const link=p.output[id]?.inputs?.draft_state;
@@ -232,6 +238,7 @@ async function queue(node,action){
         throw new Error("Draft settings or model/LoRA changed. Preview again; the old image is not approval of the new settings.");
       }
       output=continueRequest(p.output,id,ready.state_id,outputTypes);
+      draft._h3ApprovedStateId=ready.state_id;
       setDraftPhase(draft,"continue_queued",{message:""});
     }
 
@@ -313,6 +320,7 @@ app.registerExtension({
       this._h3Phase="preview_required";
       this._h3Message="";
       this._h3PreviewWall=null;
+      this._h3ApprovedStateId=null;
       buildPanel(this,draftRole);
       if(draftRole){
         this.color="#203c42";
@@ -333,8 +341,18 @@ app.registerExtension({
       this._h3Pending=false;
 
       if(report.status==="ready"){
-        const s=report.state;
-        setDraftPhase(this,"ready",{ready:s,message:"",wall:report.total_wall_s});
+        const state=report.state;
+        const incomingId=state?.state_id??"";
+        if(!acceptDraftReadyReport(this._h3Phase,incomingId,this._h3ApprovedStateId??"")){
+          console.info("[H3 Draft Continue] Ignored late Draft ready report", {
+            phase:this._h3Phase,
+            state_id:incomingId,
+            approved_state_id:this._h3ApprovedStateId??"",
+          });
+          return;
+        }
+        this._h3ApprovedStateId=null;
+        setDraftPhase(this,"ready",{ready:state,message:"",wall:report.total_wall_s});
         return;
       }
 
@@ -364,6 +382,7 @@ app.registerExtension({
       this._h3Phase="preview_required";
       this._h3Message="";
       this._h3PreviewWall=null;
+      this._h3ApprovedStateId=null;
 
       if(!draftRole){
         const go=widget(this,"go");
