@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.3";
+import * as H3Logic from "./logic.mjs?v=1.7.4";
+import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.4";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -112,8 +113,7 @@ function activeWorkflowTracker(){
   return tracker&&typeof tracker==="object"?tracker:null;
 }
 
-function rememberActiveRuntime(){
-  const tracker=activeWorkflowTracker();
+function rememberActiveRuntime(tracker=activeWorkflowTracker()){
   if(!tracker)return false;
   const snapshots=captureRuntime();
   if(!Object.keys(snapshots).length)return false;
@@ -121,8 +121,7 @@ function rememberActiveRuntime(){
   return true;
 }
 
-function restoreRuntime(){
-  const tracker=activeWorkflowTracker();
+function restoreRuntime(tracker=activeWorkflowTracker()){
   if(!tracker)return false;
   const snapshots=workflowRuntime.get(tracker);
   if(!snapshots)return false;
@@ -374,10 +373,36 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.3",
+      version: "1.7.4",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
+
+    const lifecycleBridge=installLoadGraphDataLifecycleBridge(app,{
+      before(args){
+        const clean=args?.[1]!==false;
+        const outgoingTracker=activeWorkflowTracker();
+        const captured=clean&&outgoingTracker?rememberActiveRuntime(outgoingTracker):false;
+        if(captured)console.info("[H3 Draft Continue] Captured session review state before loadGraphData.");
+        return {clean,outgoingTracker};
+      },
+      after(_result,_args,context){
+        if(!context?.clean)return;
+        const incomingTracker=activeWorkflowTracker();
+        if(!incomingTracker||incomingTracker===context.outgoingTracker)return;
+        const restored=restoreRuntime(incomingTracker);
+        if(restored)console.info("[H3 Draft Continue] Restored session review state after loadGraphData.");
+      },
+      onBridgeError(stage,error){
+        console.error("[H3 Draft Continue] Lifecycle bridge error",stage,error);
+      },
+    });
+    globalThis.__H3_DRAFT_CONTINUE_UI__.lifecycleBridge=
+      lifecycleBridge.installed?"loadGraphData-wrapper":
+      lifecycleBridge.alreadyInstalled?"loadGraphData-wrapper-existing":
+      "unavailable";
+    console.info("[H3 Draft Continue] Lifecycle bridge",globalThis.__H3_DRAFT_CONTINUE_UI__.lifecycleBridge);
+
     if(!document.getElementById("h3-draft-style")){
       const css=document.createElement("style");
       css.id="h3-draft-style";
@@ -419,16 +444,6 @@ app.registerExtension({
         }
       });
     }
-  },
-
-  beforeLoadGraph(){
-    const captured=rememberActiveRuntime();
-    if(captured)console.info("[H3 Draft Continue] Captured session review state before workflow switch.");
-  },
-
-  afterLoadGraph(){
-    const restored=restoreRuntime();
-    if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow.");
   },
 
   async beforeRegisterNodeDef(nodeType,nodeData){
