@@ -4,6 +4,18 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## Phase 3D — Reference + Structured combined integration
+
+Phase 2 Native Reference and Phase 3C Multi-Key have now been exercised together on the real GPU backend.
+
+**GPU/API matrix: PASS (8/8 executed). Overall Phase 3D: PARTIAL.**
+
+Passing combined cases include static START, START→END, 3-key and 7-key Multi-Key, two References, sparse A+C References, and a corrected re-Preview/Continue run after a per-slot Key-time change. All executed cases resumed at step 3 with no new noise, conditioning/Reference re-encode, or schedule rebuild.
+
+Full Phase 3D is not yet marked PASS because D5–D9 browser stale-state rejection tests were not run: Chrome blocked temporary local ComfyUI tabs with `ERR_BLOCKED_BY_CLIENT`. Subjective identity and trajectory quality were also not graded.
+
+[Phase 3D qualification status](docs/PHASE3D_COMBINED.md)
+
 ## v1.5.0 — Multi-Key Timeline Transparency (Phase 3C)
 
 Draft-Continue now audits the H3 Structured Canvas Multi-Key v4 timeline without generating or interpolating keys itself.
