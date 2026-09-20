@@ -461,3 +461,25 @@ B3:
 - GO-time signature verification remains unchanged as a second safety layer
 
 Next real-browser gate should re-run B2, B3 and B7 first, then continue B4/B5/B8/B9/B10.
+
+
+### Phase 4B second implementation correction
+
+The first Phase 4B fix did not change B2/B3/B7 on real browser.
+
+Root cause was confirmed from current ComfyUI frontend source:
+
+- `loadGraphData()` clones workflow JSON before `beforeConfigureGraph`
+- `clean()` runs before `beforeConfigureGraph`
+- therefore object-identity WeakMap keys cannot survive tab round-trips, and outgoing Draft runtime is already gone when `beforeConfigureGraph` runs
+
+Corrected implementation:
+
+- capture outgoing Draft review state in `beforeLoadGraph`, before graph cleanup
+- restore in `afterLoadGraph`
+- key state by the currently open workflow tab path
+- keep the cache browser-session-only
+- prune cache when a workflow tab closes, preserving the Phase 4A save/close/reopen reset contract
+- trigger READY signature revalidation from `graphChanged` plus `input/change/mouseup/keyup` user interaction events
+
+B2/B3/B7 require another targeted browser retest on v1.7.1.
