@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.1";
+import * as H3Logic from "./logic.mjs?v=1.7.2";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -105,7 +105,13 @@ function captureRuntime(){
   return snapshots;
 }
 
+function workflowStore(){
+  return app.extensionManager?.workflow??null;
+}
+
 function selectedWorkflowPath(){
+  const path=workflowStore()?.activeWorkflow?.path;
+  if(typeof path==="string"&&path.length)return path;
   const selectors=[
     ".p-togglebutton-checked [data-workflow-path]",
     ".p-togglebutton-checked[data-workflow-path]",
@@ -114,13 +120,17 @@ function selectedWorkflowPath(){
   ];
   for(const selector of selectors){
     const el=document.querySelector(selector);
-    const path=el?.dataset?.workflowPath;
-    if(path)return path;
+    const fallback=el?.dataset?.workflowPath;
+    if(fallback)return fallback;
   }
   return null;
 }
 
 function openWorkflowPaths(){
+  const open=workflowStore()?.openWorkflows;
+  if(Array.isArray(open)){
+    return new Set(open.map(w=>w?.path).filter(path=>typeof path==="string"&&path.length));
+  }
   return new Set(Array.from(document.querySelectorAll("[data-workflow-path]"))
     .map(el=>el?.dataset?.workflowPath)
     .filter(path=>typeof path==="string"&&path.length));
@@ -406,7 +416,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.1",
+      version: "1.7.2",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -459,17 +469,16 @@ app.registerExtension({
   },
 
   beforeLoadGraph(){
+    activeWorkflowPath=selectedWorkflowPath();
     rememberActiveRuntime();
   },
 
   afterLoadGraph(){
-    requestAnimationFrame(()=>{
-      const path=selectedWorkflowPath();
-      activeWorkflowPath=path;
-      const restored=restoreRuntime(path);
-      if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.",path);
-      schedulePruneClosedWorkflowRuntime();
-    });
+    const path=selectedWorkflowPath();
+    activeWorkflowPath=path;
+    const restored=restoreRuntime(path);
+    if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.",path);
+    schedulePruneClosedWorkflowRuntime();
   },
 
   async beforeRegisterNodeDef(nodeType,nodeData){
