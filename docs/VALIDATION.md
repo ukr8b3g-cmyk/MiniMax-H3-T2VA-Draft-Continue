@@ -250,3 +250,43 @@ Not yet covered:
 - custom/multi-model guiders
 - multistep solver-history resume
 - production memory-headroom hardening
+
+## Phase 4A — Preview / GO State UX
+
+Implementation status: **implemented on main; browser GPU/UI gate pending**.
+
+Phase 4A changes only frontend review UX. Backend sampling and state contracts are unchanged.
+
+Implemented browser states:
+
+- `preview_required`
+- `preview_queued`
+- `ready`
+- `stale`
+- `continue_queued`
+- `complete`
+- `error`
+
+Key contract:
+
+- Draft and directly connected Continue mirror one review state.
+- GO is enabled only in `ready`.
+- GO still recomputes the upstream graph signature immediately before Queue.
+- A signature mismatch clears UI approval and shows `PREVIEW STALE / NEW PREVIEW REQUIRED`.
+- Saved workflows never persist GO approval or State ID.
+- Reopen returns to Preview-required state.
+- Preview/New Seed/GO controls are inside the status panel.
+
+Host/CI coverage includes pure state transitions, GO-enable exclusivity, sampler approval reset, browser-extension syntax checks, and existing Python/JavaScript contracts.
+
+Real-device Phase 4A gate:
+
+- A0: workflow load → Preview required
+- A1: Preview queued → Preview running / GO locked
+- A2: Preview success → Draft READY and Continue READY TO GO
+- A3: GO → CONTINUING
+- A4: Continue success → COMPLETE
+- A5: upstream change after Preview → stale / not queued
+- A6: new Preview after stale → READY again / GO enabled
+- A7: save → close → reopen → approval not restored / Preview required
+
