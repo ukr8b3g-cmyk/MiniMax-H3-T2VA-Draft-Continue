@@ -1,6 +1,6 @@
 [project]
 name = "minimax-h3-t2va-draft-continue"
-version = "1.5.0"
+version = "1.6.0"
 description = "Review one predicted Frame 0 and continue the same MiniMax H3 T2VA sampling state."
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
