@@ -164,3 +164,12 @@ export function reviewUiState(input = {}) {
   }
   return base;
 }
+
+
+export function acceptDraftReadyReport(currentPhase, incomingStateId="", approvedStateId="") {
+  if (currentPhase === "continue_queued" || currentPhase === "complete") {
+    if (!approvedStateId) return false;
+    return incomingStateId !== approvedStateId;
+  }
+  return true;
+}
