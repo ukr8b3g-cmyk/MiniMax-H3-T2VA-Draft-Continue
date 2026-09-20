@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.3 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
+Status: v1.7.4 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
 
 ## Purpose
 
@@ -129,3 +129,27 @@ Why this matches ComfyUI lifecycle:
 The cache is a `WeakMap`, so it remains browser-session-only and cannot serialize into workflow files.
 
 Targeted retest remains B2 and B7 only. B3 already passed and its stale-signature implementation is unchanged.
+
+
+## v1.7.4 Frontend 1.52.7 compatibility bridge
+
+Root cause confirmed on ComfyUI Frontend 1.52.7:
+
+- `beforeLoadGraph` is not an available/invoked extension lifecycle hook
+- `afterLoadGraph` is not an available/invoked extension lifecycle hook
+- therefore v1.7.3 never reached its session capture/restore path
+
+v1.7.4 installs a compatibility bridge around `app.loadGraphData()`, which exists in Frontend 1.52.7 and current Frontend main.
+
+The bridge:
+
+- captures outgoing stable review state before clean graph replacement
+- delegates to the original `loadGraphData()`
+- restores against the incoming workflow's `changeTracker` after successful load
+- ignores `clean=false` loads
+- is idempotent and fail-isolated
+- keeps close/reopen safety because a reopened persisted Workflow receives a new tracker
+
+B3 live stale detection is unchanged and remains PASS.
+
+Targeted retest: B2 and B7 on Frontend 1.52.7.
