@@ -22,7 +22,7 @@ The report adds `scope=multi_key`, `timeline_hash`, `keyframe_hash`, `key_count`
 
 [Phase 3C GPU gate](docs/PHASE3C_MULTIKEY.md) · [Multi-Key workflow example](examples/H3-MULTI-KEY-Layout-Draft.json)
 
-Phase 3A and 3B remain supported; Phase 3B is already GPU PASS. Phase 3C is implemented and host-tested, with real GPU validation still pending.
+Phase 3A and 3B remain supported. **Phase 3C M0–M6 is GPU PASS** on RTX 5060 Ti 16 GB: one/two-slot Multi-Key, maximum seven keys, stale Key/Duration rejection, and re-Preview continuation all completed. Subjective path-following quality was not graded.
 
 ## v1.4.0 — START → END Layout Transition (Phase 3B)
 
