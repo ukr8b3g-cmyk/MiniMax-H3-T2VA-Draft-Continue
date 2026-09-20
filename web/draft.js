@@ -288,7 +288,11 @@ app.registerExtension({
         if(!item)return;
         pending.delete(id);
         item.node._h3Pending=false;
-        if(event!=="execution_success"){
+        if(event==="execution_success"){
+          if(isContinue(item.node)&&item.draft?._h3Phase==="continue_queued"){
+            setDraftPhase(item.draft,"complete",{message:"Continue completed successfully."});
+          }
+        }else{
           const message=e.detail?.exception_message??"The review run failed. Generate a new Preview.";
           markError(item.draft??item.node,message);
         }
