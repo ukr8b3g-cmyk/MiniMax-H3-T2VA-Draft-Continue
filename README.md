@@ -4,15 +4,15 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
-## v1.7.3 — Lifecycle / Stale-State Management (Phase 4B)
+## v1.7.4 — Lifecycle / Stale-State Management (Phase 4B)
 
 Phase 4B keeps reviewed UI state across normal switches between already-open Workflow tabs, without serializing approval into the workflow file.
 
-Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser memory. v1.7.1 captures them before graph cleanup and restores them after workflow load using the open workflow-tab path as the session key. Closing and reopening a saved workflow still requires a new Preview.
+Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser memory. v1.7.4 captures/restores them around ComfyUI's `app.loadGraphData()` using the live workflow `changeTracker` as the session key. Closing and reopening a saved workflow still requires a new Preview.
 
 While a Draft is `READY`, ComfyUI's `graphChanged` event now triggers a debounced upstream signature re-check. Execution-relevant edits immediately move the UI to `PREVIEW STALE / NEW PREVIEW REQUIRED`; the existing GO-time signature check remains the final guard.
 
-Phase 4B remains PARTIAL. B3 live stale detection is GPU/browser PASS. B2/B7 tab persistence still failed through v1.7.2, so v1.7.3 now keys browser-session review state by the workflow's live `changeTracker` object rather than by DOM/path identity. B4/B5/B8/B9/B10 remain pending.
+Phase 4B remains PARTIAL. B3 live stale detection is GPU/browser PASS. B2/B7 were traced to ComfyUI Frontend 1.52.7 not invoking the newer `beforeLoadGraph / afterLoadGraph` hooks. v1.7.4 adds a backward-compatible `app.loadGraphData()` lifecycle bridge while retaining `changeTracker`-keyed session state. B4/B5/B8/B9/B10 remain pending.
 
 ## v1.6.0 — Preview / GO State UX (Phase 4A)
 
