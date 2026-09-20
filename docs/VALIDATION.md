@@ -515,3 +515,43 @@ and `openWorkflows`.
 v1.7.2 now uses those values directly for session review-state keys and close pruning. DOM-selected tab lookup is retained only as a fallback.
 
 This specifically targets B2/B7. B3 does not need regression rerun unless desired.
+
+
+### Phase 4B v1.7.2 retest
+
+Result:
+
+- B2 FAIL — READY still reset to `PREVIEW REQUIRED` after switching away/back
+- B7 FAIL — COMPLETE still reset to `PREVIEW REQUIRED` after switching away/back
+- B3 remains PASS from the previous v1.7.1 retest
+
+Runtime during the retest remained healthy:
+
+- Preview ~67.6 s
+- Continue resumed at step 3 and completed the remaining 3 steps in ~35.6 s
+- no OOM or generation failure
+- peak RAM ~60.71 / 63.93 GiB
+- peak VRAM ~15.42 / 15.93 GiB
+- final Queue empty
+
+### Phase 4B v1.7.3 tracker-keyed lifecycle fix
+
+Path-based lifecycle identity was removed.
+
+Current ComfyUI keeps a per-open-workflow `changeTracker` object:
+
+- switching between already-open Workflow tabs keeps the same tracker for each tab
+- closing a persisted Workflow calls `unload()`, which clears its tracker
+- reopening creates a new tracker
+
+v1.7.3 therefore stores session-only review state in a `WeakMap` keyed directly by:
+
+`app.extensionManager.workflow.activeWorkflow.changeTracker`
+
+Lifecycle:
+
+- `beforeLoadGraph` captures READY/STALE/COMPLETE under the outgoing tracker
+- `afterLoadGraph` restores from the incoming tracker
+- close/reopen cannot recover the old entry because the tracker identity changes
+
+This specifically targets B2/B7. B3 stale detection is unchanged because it already passed.
