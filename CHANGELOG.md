@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.0 - 2026-09-20
+
+- Start Phase 4B lifecycle / stale-state management.
+- Preserve stable in-session review states (`READY`, `STALE`, `COMPLETE`) when switching between already-open Workflow tabs.
+- Keep saved-workflow close/reopen safety: approval/state is not serialized and a reopened workflow still requires a new Preview.
+- Use ComfyUI frontend `beforeConfigureGraph / afterConfigureGraph` hooks with an in-memory WeakMap keyed by the live workflow-state object; no approval state is written into workflow JSON.
+- Listen to ComfyUI ChangeTracker `graphChanged` and re-check the reviewed Draft graph signature while the UI is `READY`.
+- Immediately move to `PREVIEW STALE / NEW PREVIEW REQUIRED` when upstream prompt/layout/reference/sampler inputs no longer match the reviewed Preview.
+- Keep GO-time signature verification as the final safety check.
+- Initial Phase 4B real-device matrix: B0/B1/B6 PASS; B2/B3/B7 exposed lifecycle gaps; B4/B5/B8/B9/B10 not yet run.
+- Phase 4B implementation targets the B2/B3/B7 failures; real-browser retest remains required.
+
 ## 1.6.0 - 2026-09-20
 
 - Add Phase 4A Preview / GO State UX.
