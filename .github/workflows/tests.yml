@@ -23,4 +23,7 @@ jobs:
       - name: Python contracts
         run: PYTHONPATH=.:tests python -m unittest discover -s tests -p 'test_*.py' -v
       - name: JavaScript contracts
-        run: node --test tests/*.test.mjs
+        run: |
+          node --check web/draft.js
+          node --check web/logic.mjs
+          node --test tests/*.test.mjs
