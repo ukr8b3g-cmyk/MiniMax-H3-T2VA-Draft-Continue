@@ -555,3 +555,49 @@ Lifecycle:
 - close/reopen cannot recover the old entry because the tracker identity changes
 
 This specifically targets B2/B7. B3 stale detection is unchanged because it already passed.
+
+
+### Phase 4B v1.7.3 root cause — Frontend 1.52.7 lifecycle incompatibility
+
+The v1.7.3 B2/B7 failures were traced to the installed ComfyUI Frontend 1.52.7 lifecycle API.
+
+Frontend 1.52.7 supports `beforeConfigureGraph / afterConfigureGraph`, but does not expose or invoke the newer `beforeLoadGraph / afterLoadGraph` extension hooks used by v1.7.3.
+
+Observed consequence:
+
+- READY / COMPLETE existed before Workflow switch
+- v1.7.3 lifecycle capture hook never ran
+- graph replacement reset Draft/Continue UI to `PREVIEW REQUIRED`
+- restore hook never ran
+- Preview, Continue, SaveVideo and Queue completion themselves remained healthy
+
+This also explains why the pure JavaScript state tests passed while real browser lifecycle integration failed: the tests did not exercise the host Frontend's extension-hook availability.
+
+### Phase 4B v1.7.4 compatibility implementation
+
+v1.7.4 no longer depends on `beforeLoadGraph / afterLoadGraph`.
+
+Instead it installs a guarded wrapper around the long-standing `app.loadGraphData()` method:
+
+1. before the original load runs, capture stable review state from the outgoing workflow tracker
+2. run the original ComfyUI `loadGraphData()` unchanged
+3. after it resolves, read the incoming active workflow tracker
+4. if the tracker changed and has a cached session state, restore `READY / STALE / COMPLETE`
+
+Safety boundaries:
+
+- cache remains a `WeakMap` keyed by `changeTracker`
+- no approval/state ID is serialized into Workflow JSON
+- close/reopen creates a new tracker and therefore still returns to `PREVIEW REQUIRED`
+- `clean=false` graph reloads are excluded from lifecycle restoration
+- bridge hook errors are isolated so they do not block ComfyUI core loading
+
+New host-facing coverage:
+
+- lifecycle bridge before/load/after ordering
+- wrapper idempotency
+- original load error rethrow
+- bridge-hook failure isolation
+- lifecycle module syntax check in CI
+
+B3 remains PASS. B2/B7 require a targeted Frontend 1.52.7 browser retest.
