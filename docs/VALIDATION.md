@@ -356,3 +356,24 @@ Main fix: when a tracked Continue prompt emits `execution_success` while the syn
 
 A4 requires one browser retest after updating main. A0–A3 and A5–A7 do not need to be repeated unless the user wants a full matrix rerun.
 
+
+### Phase 4A A4 second retest — still FAIL
+
+Continue sampling and SaveVideo again succeeded, but after completion the browser UI returned to `READY TO GO` and re-enabled GO.
+
+History for the same successful Queue showed:
+
+- Draft node report: `ready`
+- Continue node report: `complete`
+
+This supports an event-order rollback: a late/cached Draft `ready` UI report can arrive after Continue completion and overwrite the terminal display.
+
+Main follow-up fix:
+
+- treat `continue_queued` and `complete` as protected phases against Draft `ready` reports
+- `COMPLETE` is terminal until an explicit new Preview first moves the state to `preview_queued`
+- retain the prompt-level `execution_success` completion fallback
+- add regression tests proving a late Draft `ready` cannot reopen GO after Continue
+
+A4 remains pending one targeted browser retest.
+
