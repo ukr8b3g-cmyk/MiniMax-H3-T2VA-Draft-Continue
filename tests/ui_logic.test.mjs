@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {webcrypto} from 'node:crypto';
-import {canonical,branch,signature,continueRequest,safeWorkflow,newSeed,reviewUiState} from '../web/logic.mjs';
+import {canonical,branch,signature,continueRequest,safeWorkflow,newSeed,reviewUiState,acceptDraftReadyReport} from '../web/logic.mjs';
 const fixture=()=>({'1':{class_type:'Loader',inputs:{name:'model'}},'2':{class_type:'H3T2VADraft',inputs:{model:['1',0],duration:5}},'3':{class_type:'H3T2VAContinue',inputs:{draft_state:['2',1],go:false,approved_state_id:''}},'4':{class_type:'SaveVideo',inputs:{video:['3',0]}}});
 test('canonical stable',()=>assert.equal(canonical({z:5,a:'人物'}),'{"a":"人物","z":n:4014000000000000}'));
 test('ancestor pruning',()=>assert.deepEqual(Object.keys(branch(fixture(),['2'])),['1','2']));
@@ -56,4 +56,15 @@ test('sampler approval never persists',()=>{
   assert.equal(clean.widgets_values[1],'');
   assert.equal(clean.widgets_values_named.go,false);
   assert.equal(clean.widgets_values_named.approved_state_id,'');
+});
+
+test('late Draft ready cannot roll back Continue state',()=>{
+  const approved='a'.repeat(32);
+  assert.equal(acceptDraftReadyReport('continue_queued',approved,approved),false);
+  assert.equal(acceptDraftReadyReport('complete',approved,approved),false);
+});
+test('fresh Preview ready is accepted after reset',()=>{
+  const old='a'.repeat(32), fresh='b'.repeat(32);
+  assert.equal(acceptDraftReadyReport('preview_queued',fresh,old),true);
+  assert.equal(acceptDraftReadyReport('complete',fresh,old),true);
 });
