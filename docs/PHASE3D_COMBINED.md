@@ -1,6 +1,6 @@
 # Phase 3D — Reference + BBOX / Multi-Key Combined Integration
 
-Status: **PARTIAL** — 2026-09-20 JST.
+Status: **GPU PASS / COMPLETE** — 2026-09-20 JST.
 
 ## Purpose
 
@@ -130,21 +130,11 @@ Observed peak across G11/G12:
 
 No OOM, crash, or sampling error occurred.
 
-## Remaining qualification
+## Visual-quality gate
 
-Still not verified:
+**PASS — user-confirmed.**
 
-- subjective identity/trajectory quality
-
-## Quality boundary
-
-Not graded in this gate:
-
-- subjective identity retention
-- exact BBOX placement
-- exact Key-path fidelity
-- crossing identity stability
-- semantic Reference-to-person match
+The user confirmed that the separately defined Phase 3D quality gate passed. No additional per-metric scoring breakdown was supplied with that confirmation, so this document records the overall quality-gate PASS without inventing sub-scores.
 
 ## Verdict
 
@@ -152,7 +142,7 @@ Not graded in this gate:
 - Browser stale-state rejection: **PASS (D5–D9)**
 - Browser valid-GO/save/reload: **PASS (G11/G12)**
 - Runtime/integration qualification: **PASS**
-- Subjective visual quality: **NOT GRADED**
-- Phase 3D overall: **PARTIAL (visual-quality gate only)**
+- Visual-quality gate: **PASS (user-confirmed)**
+- Phase 3D overall: **GPU PASS / COMPLETE**
 
-All defined runtime/integration gates are now closed and PASS. Overall Phase 3D remains PARTIAL only because the separately defined subjective visual-quality gate has not been graded.
+All defined Phase 3D runtime/integration and visual-quality gates are now closed and PASS.
