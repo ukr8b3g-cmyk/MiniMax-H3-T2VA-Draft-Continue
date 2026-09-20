@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.2 - 2026-09-20
+## 1.7.3 - 2026-09-21
 
 - Start Phase 4B lifecycle / stale-state management.
 - Preserve stable in-session review states (`READY`, `STALE`, `COMPLETE`) when switching between already-open Workflow tabs.
@@ -15,6 +15,8 @@
 - Expand live stale detection beyond `graphChanged` to browser `input/change/mouseup/keyup` activity so custom DOM and LiteGraph widget edits also trigger reviewed-signature revalidation.
 - v1.7.1 real-browser retest: B3 PASS; B2/B7 still FAIL because DOM tab selection was not a reliable workflow identity source.
 - v1.7.2 uses `app.extensionManager.workflow.activeWorkflow.path` and `openWorkflows` directly, matching current ComfyUI frontend/browser-test practice; DOM lookup remains fallback only.
+- v1.7.2 real-browser retest still failed B2/B7.
+- v1.7.3 removes path/DOM lifecycle identity entirely and keys session review state by the workflow's live `changeTracker` object. The same tracker survives open-tab switches; closing a persisted workflow unloads it and reopening creates a new tracker, preserving the Preview-required safety boundary.
 
 ## 1.6.0 - 2026-09-20
 
