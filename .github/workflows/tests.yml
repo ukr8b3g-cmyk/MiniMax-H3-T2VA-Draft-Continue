@@ -26,4 +26,5 @@ jobs:
         run: |
           node --check web/draft.js
           node --check web/logic.mjs
+          node --check web/lifecycle.mjs
           node --test tests/*.test.mjs
