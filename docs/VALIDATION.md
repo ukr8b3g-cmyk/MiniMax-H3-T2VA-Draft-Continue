@@ -318,3 +318,41 @@ Real-device Phase 4A gate:
 - A6: new Preview after stale → READY again / GO enabled
 - A7: save → close → reopen → approval not restored / Preview required
 
+
+### Phase 4A A0–A7 real-device retest — PARTIAL
+
+Date: 2026-09-20 JST.
+
+Result:
+
+- A0 PASS
+- A1 PASS
+- A2 PASS
+- A3 PASS
+- A4 FAIL — Continue and video save succeeded, but UI remained `READY TO GO` with GO enabled instead of transitioning to `COMPLETE`
+- A5 PASS
+- A6 PASS
+- A7 PASS
+
+Runtime behavior during A3/A4 remained correct:
+
+- Continue history reported success / complete
+- resumed from step 3
+- no new noise
+- no conditioning re-encode
+- no schedule rebuild
+- video save succeeded
+- final queue 0 running / 0 pending
+- no OOM or crash
+
+Observed maxima:
+
+- system RAM ~60.2 / 63.93 GiB
+- VRAM ~15,138 / 16,311 MiB
+
+Root cause boundary: frontend completion-state finalization only. Sampling and save paths are not implicated.
+
+Main fix: when a tracked Continue prompt emits `execution_success` while the synchronized review state is still `continue_queued`, force the pair to `complete`. This is a fail-safe for cases where the node-level `onExecuted` UI report is not delivered to the browser.
+
+A4 requires one browser retest after updating main. A0–A3 and A5–A7 do not need to be repeated unless the user wants a full matrix rerun.
+
