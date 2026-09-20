@@ -1,6 +1,6 @@
 # Validation
 
-Date: 2026-09-19.
+Date: 2026-09-20.
 
 ## Confirmed GPU evidence
 
@@ -13,6 +13,7 @@ User-confirmed real ComfyUI/H3 passes:
 - Phase 3A static START structured-layout audit, including Timeline Experimental no-op wrapper compatibility
 - Phase 3A final video generation
 - Phase 3B START→END structured-layout integration gate T0–T4
+- Phase 3C Multi-Key Timeline integration gate M0–M6
 
 These are real-device execution results. Visual placement and motion quality remain model-dependent and are not converted into a numeric quality certification.
 
@@ -27,128 +28,74 @@ Environment:
 
 Gate result: **T0–T4 PASS** for integration/correctness.
 
-### T0 — static START regression
+Key verified properties:
 
-PASS.
-
-- browser workflow
-- Preview 79.207 s
-- sampling 46.987 s
-- Preview decode 32.088 s
-- Continue 45.607 s
-- `scope = start`
-- no moved slots
-- resumed from step 3
+- static START regression preserved
+- one/two moving-slot START→END continuation completed
+- stale END change rejected before Continue sampling
+- new Preview after END change completed
+- resume started from step 3
 - no new noise
 - no conditioning re-encode
 - no schedule rebuild
 - final video/audio created successfully
 
-### T1 — one moving slot
-
-PASS.
-
-- real GPU server queue execution
-- `scope = start_end`
-- `moved_slots = ["a"]`
-- Preview → Continue completed
-- resumed from step 3
-- conditioning preserved
-- no new noise/re-encode/rebuild
-- final video/audio created successfully
-
-### T2 — two moving slots
-
-PASS.
-
-- real GPU server queue execution
-- `scope = start_end`
-- `moved_slots = ["a","b"]`
-- Preview → Continue completed
-- resumed from step 3
-- conditioning preserved
-- no new noise/re-encode/rebuild
-- final video/audio created successfully
-
 T1/T2 validated the server-side START→END path using prompt payloads derived from the repository v1.4 START-END example; they were not browser-loaded workflow runs.
 
-### T3 — stale GO rejection
+Observed T0 peak:
 
-PASS.
+- VRAM: ~15,122 MiB
+- system RAM: ~62.31 GiB / ~63.93 GiB total
 
-After Preview, only the END BBOX was changed.
+System RAM headroom was tight even though the gate passed.
 
-- old GO was rejected with “Settings changed”
-- it was not queued
-- queue remained 0 running / 0 pending
-- no continuation sampling started
+## Phase 3C GPU PASS
 
-This satisfies the stale-approval safety contract.
+Date: 2026-09-20 JST.
 
-### T4 — re-preview then GO
+Gate result: **M0–M6 PASS** for integration/correctness.
 
-PASS.
+Verified:
 
-- browser workflow
-- Preview 76.091 s
-- Continue 42.597 s
-- `scope = start_end`
-- moved slot `b`
-- `start_hash`, `end_hash`, `transition_hash` present
-- Draft and Continue structured-layout payload hashes matched
-- resumed from step 3
-- no new noise/re-encode/rebuild
-- conditioning preserved
-- final video/audio created successfully
+- M0: Phase 3B regression completed
+- M1: one-slot Multi-Key Preview → Continue → final media
+- M2: two-slot independent Multi-Key Preview → Continue → final media
+- M3: maximum seven intermediate keys completed
+- M4: changing an intermediate Key BBOX after Preview rejected the old GO
+- M5A: changing a Key time after Preview rejected the old GO
+- M5B: changing Duration after Preview rejected the old GO
+- M6: after re-Preview, the changed Key-time state completed Continue and video save
 
-## Media checks
+M6-specific evidence:
 
-T0 final media:
+- changed Key time was reflected in the new Preview state
+- Continue resumed at `3/6`
+- no new noise
+- no conditioning re-encode
+- no schedule rebuild
+- final video saved successfully
 
-- H.264
-- 768×768
-- 24 fps
-- 124 frames
-- 5.166667 s
-- AAC 32 kHz stereo
-- audio 5.167 s
+Duration/frame-grid note:
 
-T1/T2 final media:
+- configured Duration: 7.5 seconds
+- H3 frame-grid aligned result: 192 frames / 8.0 seconds
 
-- H.264
-- 512×768
-- 24 fps
-- 124 frames
-- 5.166667 s
-- AAC 32 kHz stereo
-- audio 5.167 s
+This is expected from the H3-valid frame alignment used by the workflow. Phase 3C therefore certifies the structured timeline state binding, not exact unrounded wall-clock duration.
 
-T4 final media:
+Stability:
 
-- H.264
-- 768×768
-- 24 fps
-- 124 frames
-- 5.166667 s
-- AAC 32 kHz stereo
-- audio 5.167 s
+- queue empty after the gate
+- no OOM
+- no crash
+- no workflow save
+- no implementation-code modification during the GPU test
 
-## Stability and resource note
+Observed Phase 3C peaks:
 
-No OOM, NaN, crash, or failed queue execution was observed.
+- system RAM: ~59.35 / 63.93 GiB
+- VRAM: ~15.40 / 15.93 GiB
 
-T0 sampled peak was approximately:
-
-- VRAM: 15,122 MiB
-- system RAM: 62.31 GiB
-
-The machine had about 63.93 GiB total system RAM, so **system RAM headroom is a material warning** even though the gate passed.
-
-Final cleanup check:
-
-- queue: 0 running / 0 pending
-- backend left running
-- final GPU memory: 1,496 / 16,311 MiB
+Both passed without OOM, but remaining resource headroom is small and should remain a production-hardening concern.
 
 ## Current certification
 
@@ -157,18 +104,18 @@ Final cleanup check:
 - Phase 2 Native Reference Transparency: **GPU PASS**
 - Phase 3A static START structured layout: **GPU PASS**
 - Phase 3B START→END structured layout: **GPU PASS**
-- Phase 3C Multi-Key Timeline host regression: **PASS**
-- Phase 3C Multi-Key Timeline real GPU integration: **pending GPU gate**
+- Phase 3C Multi-Key Timeline: **GPU PASS**
 - subjective START→END motion quality: **not graded**
-- explicit MID / Multi-Key Timeline: **not yet Phase 3B**
+- subjective Multi-Key path-following quality: **not graded**
 
 ## Remaining boundary
 
 Not yet covered:
 
-- Phase 3C subjective Multi-Key motion quality
+- Phase 3D combined Reference + BBOX / Multi-Key certification
 - numeric depth enforcement
 - arbitrary live ControlNet/hooks
 - noise masks
 - custom/multi-model guiders
 - multistep solver-history resume
+- production memory-headroom hardening
