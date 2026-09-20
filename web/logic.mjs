@@ -74,3 +74,93 @@ export function safeWorkflow(workflow) {
 export function newSeed(cryptoApi=globalThis.crypto){const v=new Uint32Array(2);cryptoApi.getRandomValues(v);return (v[0]&0x1fffff)*4294967296+v[1];}
 export function externalSeedTarget(output,draftId){const input=output[String(draftId)]?.inputs?.noise;
   if(!Array.isArray(input)||output[input[0]]?.class_type!=="RandomNoise") return null; return {nodeId:input[0],name:"noise_seed"};}
+
+
+export const REVIEW_PHASES = new Set([
+  "preview_required", "preview_queued", "ready", "stale",
+  "continue_queued", "complete", "error",
+]);
+
+function finiteNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+export function reviewUiState(input = {}) {
+  const phase = REVIEW_PHASES.has(input.phase) ? input.phase : "preview_required";
+  const currentStep = Number.isInteger(input.currentStep) && input.currentStep >= 0 ? input.currentStep : 0;
+  const totalSteps = Number.isInteger(input.totalSteps) && input.totalSteps >= currentStep ? input.totalSteps : 0;
+  const remaining = Math.max(0, totalSteps - currentStep);
+  const width = Number.isInteger(input.width) && input.width > 0 ? input.width : null;
+  const height = Number.isInteger(input.height) && input.height > 0 ? input.height : null;
+  const frameCount = Number.isInteger(input.frameCount) && input.frameCount > 0 ? input.frameCount : null;
+  const wall = finiteNumber(input.wallSeconds);
+  const message = typeof input.message === "string" ? input.message.trim() : "";
+
+  const geometry = width && height ? `${width}×${height}` : "";
+  const frames = frameCount ? `${frameCount}f` : "";
+  const wallText = wall !== null ? `Preview ${wall.toFixed(1)}s` : "";
+  const previewMeta = [geometry, frames, wallText, "Frame 0 preview · estimate"].filter(Boolean).join(" · ");
+
+  const base = {
+    state: phase,
+    kind: "idle",
+    draft: { title: "PREVIEW REQUIRED", detail: "Review Frame 0 before GO." },
+    continue: { title: "WAITING FOR PREVIEW", detail: "Generate and review a Preview first." },
+    canPreview: true,
+    canReroll: true,
+    canGo: false,
+  };
+
+  if (phase === "preview_queued") {
+    return {
+      ...base, kind: "busy", canPreview: false, canReroll: false,
+      draft: { title: "PREVIEW RUNNING", detail: "Generating Frame 0 from the full-length H3 latent." },
+      continue: { title: "WAITING", detail: "GO unlocks after Preview completes." },
+    };
+  }
+  if (phase === "ready") {
+    return {
+      ...base, kind: "ready", canGo: true,
+      draft: {
+        title: totalSteps ? `READY · ${currentStep}/${totalSteps}` : "READY",
+        detail: previewMeta || "Frame 0 preview · estimate",
+      },
+      continue: {
+        title: "READY TO GO",
+        detail: totalSteps ? `${remaining} sampling steps remaining` : "Continue the reviewed Draft State",
+      },
+    };
+  }
+  if (phase === "stale") {
+    return {
+      ...base, kind: "warning",
+      draft: { title: "PREVIEW STALE", detail: message || "Settings changed after Preview." },
+      continue: { title: "NEW PREVIEW REQUIRED", detail: "GO is locked until Preview is regenerated." },
+    };
+  }
+  if (phase === "continue_queued") {
+    return {
+      ...base, kind: "busy", canPreview: false, canReroll: false,
+      draft: { title: "REVIEWED", detail: "The approved Draft State is continuing." },
+      continue: {
+        title: "CONTINUING",
+        detail: totalSteps ? `Resume ${currentStep}/${totalSteps} · ${remaining} steps remaining` : "Continuing reviewed state",
+      },
+    };
+  }
+  if (phase === "complete") {
+    return {
+      ...base, kind: "ready",
+      draft: { title: "REVIEWED", detail: "Preview/approval cycle completed. Generate a new Preview for another run." },
+      continue: { title: "COMPLETE", detail: message || "Reviewed Draft State completed." },
+    };
+  }
+  if (phase === "error") {
+    return {
+      ...base, kind: "error",
+      draft: { title: "REVIEW ERROR", detail: message || "Preview/Continue failed. Generate a new Preview." },
+      continue: { title: "NOT READY", detail: "Generate a new Preview before GO." },
+    };
+  }
+  return base;
+}
