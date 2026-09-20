@@ -1,6 +1,16 @@
-# MiniMax H3 Draft Continue — v1.6.0
+# MiniMax H3 Draft Continue — v1.7.0
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## v1.7.0 — Phase 4B Lifecycle / Stale-State Management
+
+Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った場合**に、レビュー済みUI状態をブラウザーセッション内だけで保持します。
+
+保持対象は `READY / STALE / COMPLETE` です。承認StateをWorkflow JSONへ保存することはありません。そのため、Workflowを閉じて保存済みファイルから再度開いた場合は、従来どおり新しいPreviewが必要です。
+
+また、Draftが`READY`の間はComfyUIの`graphChanged`を監視し、上流graph signatureを再確認します。Prompt、Layout、Reference、Sampler入力など実行内容に関わる変更を検出すると、GOを押す前に`PREVIEW STALE / NEW PREVIEW REQUIRED`へ移行してGOを無効化します。GO直前のsignature再確認も残します。
+
+最初のPhase 4B実機テストはPARTIALで、B0/B1/B6はPASS、B2/B3/B7でlifecycle問題を確認しました。これらはmainで修正済みで、B4/B5/B8/B9/B10を含む再Gateが必要です。
 
 ## v1.6.0 — Phase 4A Preview / GO State UX
 
