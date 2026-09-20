@@ -42,3 +42,18 @@ test('review UI running and complete states',()=>{
   assert.equal(done.canGo,false);
   assert.equal(done.canPreview,true);
 });
+
+test('only ready phase enables GO',()=>{
+  for(const phase of ['preview_required','preview_queued','stale','continue_queued','complete','error']){
+    assert.equal(reviewUiState({phase,currentStep:3,totalSteps:6}).canGo,false,phase);
+  }
+  assert.equal(reviewUiState({phase:'ready',currentStep:3,totalSteps:6}).canGo,true);
+});
+test('sampler approval never persists',()=>{
+  const f={nodes:[{type:'H3ContinueSampler',widgets_values:[true,'a'.repeat(32)],widgets_values_named:{go:true,approved_state_id:'a'.repeat(32)}}]};
+  const clean=safeWorkflow(f).nodes[0];
+  assert.equal(clean.widgets_values[0],false);
+  assert.equal(clean.widgets_values[1],'');
+  assert.equal(clean.widgets_values_named.go,false);
+  assert.equal(clean.widgets_values_named.approved_state_id,'');
+});
