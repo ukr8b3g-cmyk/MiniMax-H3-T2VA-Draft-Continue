@@ -97,6 +97,82 @@ Observed Phase 3C peaks:
 
 Both passed without OOM, but remaining resource headroom is small and should remain a production-hardening concern.
 
+## Phase 3D combined Reference + Structured integration — PARTIAL
+
+Date: 2026-09-20 JST.
+
+Overall status: **PARTIAL**.
+
+GPU/API integration matrix: **PASS (8/8 executed cases)**.
+
+Executed successfully:
+
+- D0: no native Reference + Multi-Key baseline
+- D1: one native Reference + static START
+- D2: one native Reference + START→END
+- D3A: one native Reference + one-slot / three-key Multi-Key
+- D3B: one native Reference + one-slot / seven-key Multi-Key at requested 7.5 s
+- D4A: two References A+B + two-slot Multi-Key
+- D4B: sparse References A+C (B unconnected) + A/C Multi-Key
+- D10: corrected re-preview run with A-K1 time changed to 0.30 while C-K1 remained 0.25
+
+All executed GPU/API cases:
+
+- completed Preview → Continue → saved video
+- preserved identical structured payloads between Preview and Continue
+- resumed at step 3
+- introduced no new noise
+- did not re-encode conditioning
+- did not re-encode Reference
+- did not rebuild the schedule
+- completed with an empty final queue
+
+D10 correction note:
+
+- the first D10 fixture unintentionally changed both A-K1 and C-K1 to 0.30
+- that run was excluded from verdicts
+- corrected D10 used A key times `[0.30, 0.50, 0.75]` and C key times `[0.25, 0.50, 0.75]`
+- corrected D10 passed Preview → Continue → final video
+
+D3B duration/frame-grid observation:
+
+- requested timeline duration: 7.5 s
+- H3-valid aligned output: 192 frames / 8.0 s
+
+Resource peaks:
+
+- VRAM: 15,637 / 16,311 MiB
+- system RAM: 60.155 / 63.927 GiB
+
+No OOM, NaN, crash, or failed GPU execution occurred.
+
+### Why Phase 3D is not yet full PASS
+
+D5–D9 browser/UI stale-state rejection tests were **not run** because Chrome blocked the agent-created local ComfyUI tabs with `ERR_BLOCKED_BY_CLIENT`.
+
+Not yet verified in the browser:
+
+- D5: stale Reference replacement after Preview
+- D6: stale Reference order change
+- D7: stale START/END or intermediate-Key BBOX change
+- D8: stale Key-time / Duration change
+- D9: stale compiled-prompt change
+
+Direct API execution proves the combined server-side generation path but does not substitute for the requested browser/UI pre-queue stale-GO rejection gate.
+
+Also not graded:
+
+- subjective identity retention
+- BBOX trajectory fidelity
+- per-Key path-following quality
+- semantic Reference-to-subject quality
+
+Therefore:
+
+- Phase 3D GPU/API combined integration: **PASS**
+- Phase 3D browser stale-state gate: **PENDING**
+- Phase 3D overall: **PARTIAL**
+
 ## Current certification
 
 - Phase 1 generic Draft/Continue: **GPU PASS**
@@ -105,6 +181,9 @@ Both passed without OOM, but remaining resource headroom is small and should rem
 - Phase 3A static START structured layout: **GPU PASS**
 - Phase 3B START→END structured layout: **GPU PASS**
 - Phase 3C Multi-Key Timeline: **GPU PASS**
+- Phase 3D Reference + Structured GPU/API integration: **PASS (8/8 executed)**
+- Phase 3D browser stale-state rejection gate: **PENDING**
+- Phase 3D overall: **PARTIAL**
 - subjective START→END motion quality: **not graded**
 - subjective Multi-Key path-following quality: **not graded**
 
@@ -112,7 +191,6 @@ Both passed without OOM, but remaining resource headroom is small and should rem
 
 Not yet covered:
 
-- Phase 3D combined Reference + BBOX / Multi-Key certification
 - numeric depth enforcement
 - arbitrary live ControlNet/hooks
 - noise masks
