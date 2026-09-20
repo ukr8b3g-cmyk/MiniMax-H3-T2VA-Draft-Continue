@@ -173,3 +173,23 @@ export function acceptDraftReadyReport(currentPhase, incomingStateId="", approve
   if (currentPhase === "continue_queued" || currentPhase === "complete") return false;
   return true;
 }
+
+
+export const SESSION_RESTORABLE_PHASES = new Set(["ready", "stale", "complete"]);
+
+export function sessionPhaseRestorable(phase) {
+  return SESSION_RESTORABLE_PHASES.has(phase);
+}
+
+export function copyReviewRuntime(runtime = {}) {
+  const phase = typeof runtime.phase === "string" ? runtime.phase : "preview_required";
+  if (!sessionPhaseRestorable(phase)) return null;
+  return {
+    phase,
+    ready: runtime.ready ?? null,
+    message: typeof runtime.message === "string" ? runtime.message : "",
+    previewWall: typeof runtime.previewWall === "number" && Number.isFinite(runtime.previewWall)
+      ? runtime.previewWall : null,
+    approvedStateId: typeof runtime.approvedStateId === "string" ? runtime.approvedStateId : null,
+  };
+}
