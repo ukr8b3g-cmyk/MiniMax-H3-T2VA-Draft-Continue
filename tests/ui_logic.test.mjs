@@ -63,8 +63,8 @@ test('late Draft ready cannot roll back Continue state',()=>{
   assert.equal(acceptDraftReadyReport('continue_queued',approved,approved),false);
   assert.equal(acceptDraftReadyReport('complete',approved,approved),false);
 });
-test('fresh Preview ready is accepted after reset',()=>{
+test('fresh Preview ready is accepted only after explicit reset',()=>{
   const old='a'.repeat(32), fresh='b'.repeat(32);
+  assert.equal(acceptDraftReadyReport('complete',fresh,old),false);
   assert.equal(acceptDraftReadyReport('preview_queued',fresh,old),true);
-  assert.equal(acceptDraftReadyReport('complete',fresh,old),true);
 });
