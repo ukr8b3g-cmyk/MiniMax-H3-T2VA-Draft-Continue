@@ -2,9 +2,9 @@
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
 
-## v1.7.0 — Phase 4B Lifecycle / Stale-State Management
+## v1.7.1 — Phase 4B Lifecycle / Stale-State Management
 
-Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った場合**に、レビュー済みUI状態をブラウザーセッション内だけで保持します。
+Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った場合**に、レビュー済みUI状態をブラウザーセッション内だけで保持します。v1.7.1ではComfyUIのgraph clone/clean順序に合わせ、`beforeLoadGraph`で旧Stateを捕捉し、`afterLoadGraph`でWorkflowタブpath単位に復元する方式へ修正しました。
 
 保持対象は `READY / STALE / COMPLETE` です。承認StateをWorkflow JSONへ保存することはありません。そのため、Workflowを閉じて保存済みファイルから再度開いた場合は、従来どおり新しいPreviewが必要です。
 
