@@ -20,7 +20,7 @@ Draft-Continue側ではKeyを生成・補間しません。Canvas/Prompterが作
 
 Reportには`scope=multi_key / timeline_hash / keyframe_hash / key_count / key_times / duration_seconds`を追加します。Preview後にKey座標、Key時刻、Key数、順序、Duration、START、END、Promptのどれかを変更すると、古いGOはSampling前に拒否されます。
 
-Phase 3A/3Bは後方互換のままです。Phase 3Cは実装・Host回帰PASS、実GPU Gate待ちです。
+Phase 3A/3Bは後方互換のままです。**Phase 3CもM0〜M6すべてGPU PASS**です。1/2 slot Multi-Key、最大7 Key、Key BBOX/時刻/Duration変更時の旧GO拒否、再Preview後の3/6 Continue〜動画保存まで確認済みです。主観的な軌道追従品質は今回の判定対象外です。
 
 ## v1.4.0 — Phase 3B START → END Layout Transition
 
