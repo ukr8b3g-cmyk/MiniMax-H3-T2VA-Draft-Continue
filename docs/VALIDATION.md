@@ -416,3 +416,48 @@ With the previously confirmed A0–A3 and A5–A7 results, the complete Phase 4A
 
 Therefore Phase 4A Preview / GO State UX is **GPU/UI PASS / COMPLETE**.
 
+
+
+## Phase 4B — Lifecycle / stale-state management
+
+Implementation status: **implemented on main; real-browser retest pending**.
+
+Initial real-device result: **PARTIAL**.
+
+Observed before the Phase 4B fix:
+
+- B0 PASS — workflow opened in `PREVIEW REQUIRED`, GO disabled, Queue empty
+- B1 PASS — Preview completed and reached `READY · 3/6`
+- B2 FAIL — switching to another already-open Workflow and back reset READY to `PREVIEW REQUIRED`
+- B3 FAIL — editing Slot A description after Preview left `READY TO GO` active instead of immediately invalidating approval
+- B6 PASS — GO resumed step 3 and reached COMPLETE; SaveVideo succeeded
+- B7 FAIL — switching away/back after completion reset COMPLETE to `PREVIEW REQUIRED`
+- B4/B5/B8/B9/B10 — not run
+
+Initial Phase 4B resource observation:
+
+- RAM peak ~50.2 / 63.9 GiB
+- VRAM peak ~15.3 / 15.9 GiB
+- no OOM
+- final Queue 0 running / 0 pending
+
+### Phase 4B implementation
+
+B2/B7:
+
+- stable review state is held only in browser-session memory
+- the cache is keyed by the live workflow-state object supplied to `beforeConfigureGraph`
+- switching between already-open tabs can restore `READY`, `STALE`, or `COMPLETE`
+- pending states are not restored
+- nothing is written to workflow JSON
+- closing/unloading and reopening a saved workflow creates a fresh workflow-state object, so the existing Phase 4A approval-reset boundary remains intact
+
+B3:
+
+- listen for ComfyUI ChangeTracker `graphChanged`
+- while a Draft is `READY`, debounce and recompute the upstream graph signature
+- mismatch or an invalid upstream graph immediately marks the Draft `PREVIEW STALE`
+- GO remains locked until a fresh Preview
+- GO-time signature verification remains unchanged as a second safety layer
+
+Next real-browser gate should re-run B2, B3 and B7 first, then continue B4/B5/B8/B9/B10.
