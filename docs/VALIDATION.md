@@ -210,23 +210,20 @@ Highest observed across G11/G12:
 
 No OOM, crash, or sampling error occurred. Final queue was 0 running / 0 pending.
 
-### Why Phase 3D remains PARTIAL
+### Phase 3D visual-quality gate
 
-The combined GPU/API generation path and browser stale-state rejection gate are both PASS, but the following are still not verified:
+**PASS — user-confirmed.**
 
-- subjective identity retention
-- BBOX trajectory fidelity
-- per-Key path-following quality
-- semantic Reference-to-subject quality
+The user confirmed that the separately defined Phase 3D quality gate passed. No additional per-metric breakdown was supplied in that confirmation, so this record does not invent scores or sub-results beyond the confirmed PASS.
 
 Therefore:
 
 - Phase 3D GPU/API combined integration: **PASS**
 - Phase 3D browser stale-state gate: **PASS**
 - Phase 3D browser valid-GO/save/reload workflow: **PASS (G11/G12)**
-- Phase 3D subjective visual quality: **NOT GRADED**
+- Phase 3D visual-quality gate: **PASS (user-confirmed)**
 - Phase 3D runtime/integration qualification: **PASS**
-- Phase 3D overall: **PARTIAL (visual-quality gate only)**
+- Phase 3D overall: **GPU PASS / COMPLETE**
 
 ## Current certification
 
@@ -238,10 +235,10 @@ Therefore:
 - Phase 3C Multi-Key Timeline: **GPU PASS**
 - Phase 3D Reference + Structured GPU/API integration: **PASS (8/8 executed)**
 - Phase 3D browser stale-state rejection gate: **PASS (D5–D9)**
-- Phase 3D browser valid-GO/save/reload workflow: **PENDING**
-- Phase 3D overall: **PARTIAL**
-- subjective START→END motion quality: **not graded**
-- subjective Multi-Key path-following quality: **not graded**
+- Phase 3D browser valid-GO/save/reload workflow: **PASS (G11/G12)**
+- Phase 3D visual-quality gate: **PASS (user-confirmed)**
+- Phase 3D overall: **GPU PASS / COMPLETE**
+- Phase 3D combined visual-quality gate: **PASS (user-confirmed)**
 
 ## Remaining boundary
 
