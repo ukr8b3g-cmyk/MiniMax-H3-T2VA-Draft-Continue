@@ -1,0 +1,75 @@
+# Phase 4B — Lifecycle / Stale-State Management
+
+Status: implementation on main; GPU/browser gate **PARTIAL / retest pending**.
+
+## Purpose
+
+Phase 4A established the visible Preview → READY → GO → COMPLETE state machine.
+
+Phase 4B makes that state survive normal in-session workflow navigation while invalidating approval as soon as the execution-relevant graph changes.
+
+## Session lifecycle contract
+
+Stable session-only phases:
+
+- `ready`
+- `stale`
+- `complete`
+
+These may be restored when the user switches from one already-open Workflow tab to another and then returns.
+
+Not restored:
+
+- `preview_required`
+- `preview_queued`
+- `continue_queued`
+- `error`
+
+The state cache is browser-memory only. It uses a WeakMap keyed by the live workflow-state object passed through ComfyUI's graph configuration hooks.
+
+No approval or state ID is serialized into workflow JSON.
+
+Therefore:
+
+- open-tab switch → stable review state may return
+- save + close + reopen → new Preview required
+- browser reload / new JS session → new Preview required
+
+## Live stale-state contract
+
+ComfyUI ChangeTracker emits `graphChanged` after workflow edits.
+
+While a Draft is `READY`:
+
+1. debounce the graph change
+2. rebuild the current API prompt
+3. recompute the Draft upstream signature
+4. compare with the reviewed Preview hash
+5. mismatch → `PREVIEW STALE / NEW PREVIEW REQUIRED`
+6. GO is disabled
+
+The existing GO-click signature check is retained as the final safety check.
+
+## Initial real-device result
+
+Before this lifecycle implementation:
+
+| Case | Result | Observation |
+| --- | --- | --- |
+| B0 | PASS | open → Preview required |
+| B1 | PASS | Preview → READY 3/6 |
+| B2 | FAIL | tab switch lost READY |
+| B3 | FAIL | upstream description edit did not immediately stale |
+| B6 | PASS | Continue + Save completed |
+| B7 | FAIL | tab switch lost COMPLETE |
+
+B4/B5/B8/B9/B10 were not run.
+
+## Retest priority
+
+1. B2 — READY survives open-tab round-trip
+2. B3 — upstream semantic edit immediately becomes STALE / GO disabled
+3. B7 — COMPLETE survives open-tab round-trip
+4. continue remaining B4/B5/B8/B9/B10 matrix
+
+Backend sampler/state math is unchanged.
