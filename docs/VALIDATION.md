@@ -176,12 +176,44 @@ Observed browser Preview-setup peaks:
 
 No OOM or crash occurred.
 
+### Browser valid-GO / saved-workflow reload G11–G12
+
+**PASS.**
+
+G11 verified a normal browser Preview → GO → Continue → Save path using the combined Reference + Multi-Key workflow:
+
+- 512 × 768, 124 frames, 24 fps
+- two native References (A and C)
+- `scope = multi_key`
+- six total keys
+- Preview ready at 3/6
+- Continue resumed from step 3
+- `new_noise=false`
+- `conditioning_reencoded=false`
+- `reference_reencoded=false`
+- `schedule_rebuilt=false`
+- final video saved successfully
+
+G12 then saved the test workflow, closed its tab, reopened it from the workflow list, and verified the persistence boundary:
+
+- saved workflow reopened successfully
+- approval/runtime state was not restored
+- UI required a new Preview
+- a fresh GPU Preview with a new seed completed
+- new approval was accepted
+- GO → Continue → Save completed successfully
+
+Highest observed across G11/G12:
+
+- system RAM: ~60.62 / 63.93 GiB
+- VRAM: ~15.39 / 15.93 GiB
+
+No OOM, crash, or sampling error occurred. Final queue was 0 running / 0 pending.
+
 ### Why Phase 3D remains PARTIAL
 
 The combined GPU/API generation path and browser stale-state rejection gate are both PASS, but the following are still not verified:
 
-- valid browser GO → Continue → Save flow using the combined Reference + Multi-Key workflow
-- saved-workflow reload and subsequent valid Preview/GO
 - subjective identity retention
 - BBOX trajectory fidelity
 - per-Key path-following quality
@@ -191,9 +223,10 @@ Therefore:
 
 - Phase 3D GPU/API combined integration: **PASS**
 - Phase 3D browser stale-state gate: **PASS**
-- Phase 3D browser valid-GO/save/reload workflow: **PENDING**
+- Phase 3D browser valid-GO/save/reload workflow: **PASS (G11/G12)**
 - Phase 3D subjective visual quality: **NOT GRADED**
-- Phase 3D overall: **PARTIAL**
+- Phase 3D runtime/integration qualification: **PASS**
+- Phase 3D overall: **PARTIAL (visual-quality gate only)**
 
 ## Current certification
 
