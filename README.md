@@ -8,11 +8,11 @@
 
 Phase 2 Native Reference and Phase 3C Multi-Key have now been exercised together on the real GPU backend.
 
-**GPU/API matrix: PASS (8/8 executed). Overall Phase 3D: PARTIAL.**
+**Phase 3D: GPU PASS / COMPLETE.**
 
 Passing combined cases include static START, START→END, 3-key and 7-key Multi-Key, two References, sparse A+C References, and a corrected re-Preview/Continue run after a per-slot Key-time change. All executed cases resumed at step 3 with no new noise, conditioning/Reference re-encode, or schedule rebuild.
 
-Browser stale-state rejection D5–D9 is now **PASS**: Reference replacement/order, BBOX, Key time, Duration and Prompt changes all required a new Preview and never entered Queue. Browser valid GO→Continue→Save and saved-workflow reload are now also **PASS (G11/G12)**. All runtime/integration gates are closed; overall Phase 3D remains PARTIAL only because subjective identity/trajectory quality has not been graded.
+Browser stale-state rejection D5–D9 is **PASS**, and browser valid GO→Continue→Save plus saved-workflow reload are **PASS (G11/G12)**. The separately defined Phase 3D visual-quality gate is also **user-confirmed PASS**. All Phase 3D gates are now closed.
 
 [Phase 3D qualification status](docs/PHASE3D_COMBINED.md)
 
