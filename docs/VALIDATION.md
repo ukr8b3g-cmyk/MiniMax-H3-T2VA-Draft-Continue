@@ -279,6 +279,34 @@ Key contract:
 
 Host/CI coverage includes pure state transitions, GO-enable exclusivity, sampler approval reset, browser-extension syntax checks, and existing Python/JavaScript contracts.
 
+### Phase 4A first real-device attempt — A0 BLOCKED
+
+Date: 2026-09-20 JST.
+
+Backend/GPU sampling itself was healthy: a direct Draft Preview completed successfully on RTX 5060 Ti with no OOM. However, the Phase 4A status panel and controls did not appear on either the loaded workflow node or a newly added Draft Sampler, so A0 could not be certified and A1–A7 were not started.
+
+This isolates the first failure to frontend extension loading/registration rather than the sampler GPU path.
+
+Observed Preview run:
+
+- 512×768, requested 5 s
+- Euler / 6 total steps / Preview at 3
+- 2 References
+- Preview history success
+- ~132.83 s
+- minimum observed free VRAM ~1.31 GiB
+- minimum observed free RAM ~3.41 GiB
+- no OOM
+
+Follow-up hardening on main:
+
+- version the `logic.mjs` dependency URL from `draft.js`
+- use a namespace import so a stale dependency cannot fail solely on a newly added named export
+- provide a minimal fail-safe state renderer if the old dependency is still returned
+- expose `globalThis.__H3_DRAFT_CONTINUE_UI__` and a console load marker for A0 diagnostics
+
+A0–A7 remain pending until the frontend panel is visible on a fresh real browser run.
+
 Real-device Phase 4A gate:
 
 - A0: workflow load → Preview required
