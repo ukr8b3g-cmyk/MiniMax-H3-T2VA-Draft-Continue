@@ -601,3 +601,36 @@ New host-facing coverage:
 - lifecycle module syntax check in CI
 
 B3 remains PASS. B2/B7 require a targeted Frontend 1.52.7 browser retest.
+
+
+### Phase 4B v1.7.4 real-browser retest — B2/B7 PASS
+
+After a full browser reload (Ctrl+F5), the actual v1.7.4 frontend extension and Frontend 1.52.7 compatibility bridge were loaded.
+
+Diagnostics confirmed:
+
+- lifecycle bridge startup: `loadGraphData-wrapper`
+- B2 tab switch: capture log present, restore log present
+- B7 tab switch: capture log present, restore log present
+
+Results:
+
+- B2 PASS — after Preview reached `READY · 3/6`, switching to another Workflow and returning preserved `READY · 3/6`, `READY TO GO`, and GO enabled
+- B7 PASS — after Continue completed, switching away/back preserved Draft `REVIEWED`, Continue `COMPLETE`, disabled completion/GO control, and an empty Queue
+- Continue resumed 3 steps and completed in ~33 s
+- Queue after B7: 0 active
+- no OOM or crash
+
+The earlier v1.7.4 B2/B7 result is excluded because that browser page still had an old v1.1.1-era `draft.js` module resident in page memory. Backend restart alone does not replace already-loaded extension JavaScript in an open browser page.
+
+Current Phase 4B matrix:
+
+- B0 PASS
+- B1 PASS
+- B2 PASS
+- B3 PASS
+- B6 PASS
+- B7 PASS
+- B4/B5/B8/B9/B10 not yet run
+
+Phase 4B overall remains **PARTIAL** until the remaining B4/B5/B8/B9/B10 cases are completed.
