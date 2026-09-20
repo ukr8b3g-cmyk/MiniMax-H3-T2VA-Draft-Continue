@@ -10,7 +10,7 @@ Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った�
 
 また、Draftが`READY`の間はComfyUIの`graphChanged`を監視し、上流graph signatureを再確認します。Prompt、Layout、Reference、Sampler入力など実行内容に関わる変更を検出すると、GOを押す前に`PREVIEW STALE / NEW PREVIEW REQUIRED`へ移行してGOを無効化します。GO直前のsignature再確認も残します。
 
-Phase 4BはPARTIALのままです。B3の即時STALE検出は実機PASSです。B2/B7失敗の主因は、ComfyUI Frontend 1.52.7にv1.7.3が依存していた`beforeLoadGraph / afterLoadGraph`フックが存在・発火しないことでした。v1.7.4では、1.52.7にも存在する`app.loadGraphData()`を安全にラップし、graph置換の直前・直後で`changeTracker`単位のセッションStateを保存・復元します。Workflowを閉じるとtrackerが破棄されるため、保存→閉じる→再読込時のPREVIEW REQUIRED境界も維持します。B4/B5/B8/B9/B10は未実施です。
+Phase 4BはPARTIALのままですが、ComfyUI Frontend 1.52.7上のv1.7.4再テストでB2/B3/B7はPASSしました。READYとCOMPLETEは開いたままのWorkflowタブ往復で保持され、上流変更時は即座にSTALEへ移行します。B4/B5/B8/B9/B10は未実施です。
 
 ## v1.6.0 — Phase 4A Preview / GO State UX
 
