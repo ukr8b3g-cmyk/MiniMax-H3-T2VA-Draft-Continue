@@ -14,6 +14,8 @@
 - After the first real-device A0 attempt showed no Phase 4A panel despite successful backend Preview sampling, harden frontend module loading with a versioned `logic.mjs` import, namespace import fallback, and an explicit UI-load diagnostic marker.
 - Fix A4 completion display: use tracked `execution_success` as a frontend fail-safe to transition a successful Continue from `continue_queued` to `complete` when the node-level UI report did not finalize the panel.
 - After the second A4 retest showed a late Draft `ready` report reopening GO after successful Continue, make `continue_queued`/`complete` reject Draft `ready` UI rollback; `COMPLETE` remains terminal until an explicit new Preview.
+- Final A4 browser/GPU retest PASS: Draft remained `REVIEWED`, Continue remained `COMPLETE`, GO stayed disabled, SaveVideo succeeded, and Queue ended 0/0.
+- Phase 4A A0–A7 GPU/UI gate PASS on RTX 5060 Ti; observed final A4 peak RAM ~60.7/63.9 GiB and VRAM ~15.5/15.9 GiB with no OOM.
 
 ## 1.5.0 - 2026-09-19
 
