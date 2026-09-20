@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {webcrypto} from 'node:crypto';
-import {canonical,branch,signature,continueRequest,safeWorkflow,newSeed,reviewUiState,acceptDraftReadyReport} from '../web/logic.mjs';
+import {canonical,branch,signature,continueRequest,safeWorkflow,newSeed,reviewUiState,acceptDraftReadyReport,sessionPhaseRestorable,copyReviewRuntime} from '../web/logic.mjs';
 const fixture=()=>({'1':{class_type:'Loader',inputs:{name:'model'}},'2':{class_type:'H3T2VADraft',inputs:{model:['1',0],duration:5}},'3':{class_type:'H3T2VAContinue',inputs:{draft_state:['2',1],go:false,approved_state_id:''}},'4':{class_type:'SaveVideo',inputs:{video:['3',0]}}});
 test('canonical stable',()=>assert.equal(canonical({z:5,a:'人物'}),'{"a":"人物","z":n:4014000000000000}'));
 test('ancestor pruning',()=>assert.deepEqual(Object.keys(branch(fixture(),['2'])),['1','2']));
@@ -67,4 +67,15 @@ test('fresh Preview ready is accepted only after explicit reset',()=>{
   const old='a'.repeat(32), fresh='b'.repeat(32);
   assert.equal(acceptDraftReadyReport('complete',fresh,old),false);
   assert.equal(acceptDraftReadyReport('preview_queued',fresh,old),true);
+});
+
+test('Phase 4B restores only stable session phases',()=>{
+  for(const phase of ['ready','stale','complete']) assert.equal(sessionPhaseRestorable(phase),true,phase);
+  for(const phase of ['preview_required','preview_queued','continue_queued','error']) assert.equal(sessionPhaseRestorable(phase),false,phase);
+});
+test('Phase 4B runtime snapshot keeps reviewed state but not pending execution',()=>{
+  const ready=copyReviewRuntime({phase:'ready',ready:{state_id:'a'.repeat(32)},message:'',previewWall:12.5,approvedStateId:null});
+  assert.equal(ready.phase,'ready');
+  assert.equal(ready.ready.state_id,'a'.repeat(32));
+  assert.equal(copyReviewRuntime({phase:'continue_queued',ready:{state_id:'a'.repeat(32)}}),null);
 });
