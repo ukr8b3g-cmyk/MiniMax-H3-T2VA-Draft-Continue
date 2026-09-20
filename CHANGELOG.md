@@ -11,6 +11,7 @@
 - Saved workflows still never restore approval/state IDs and reopen in Preview-required state.
 - Keep backend sampler/state/reference/structured contracts unchanged.
 - Add pure JavaScript state-contract tests and browser-extension syntax checks in CI.
+- After the first real-device A0 attempt showed no Phase 4A panel despite successful backend Preview sampling, harden frontend module loading with a versioned `logic.mjs` import, namespace import fallback, and an explicit UI-load diagnostic marker.
 
 ## 1.5.0 - 2026-09-19
 
