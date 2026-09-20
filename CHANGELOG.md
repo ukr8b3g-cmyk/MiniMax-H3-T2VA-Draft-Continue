@@ -20,7 +20,8 @@
 - Phase 3D browser stale-GO gate D5–D9 PASS: Reference replacement/order, BBOX, Key-time, Duration and Prompt mutations all rejected old GO before Queue.
 - Phase 3D browser valid Preview→GO→Continue→Save PASS (G11), and saved-workflow close/reopen → fresh Preview→GO→Continue→Save PASS (G12).
 - Saved workflow reload correctly resets approval/runtime state and requires a new Preview.
-- Phase 3D runtime/integration qualification is fully PASS; overall Phase 3D remains PARTIAL only because subjective identity/trajectory quality is not graded.
+- Phase 3D runtime/integration qualification is fully PASS.
+- Phase 3D visual-quality gate is user-confirmed PASS; overall Phase 3D is GPU PASS / COMPLETE.
 - G11/G12 observed peaks: system RAM ~60.62 / 63.93 GiB and VRAM ~15.39 / 15.93 GiB; no OOM, crash, or sampling error.
 - Phase 3D observed peaks: VRAM 15,637 / 16,311 MiB and system RAM 60.155 / 63.927 GiB; no OOM or crash.
 - D3B requested 7.5 s and produced 192 frames / 8.0 s after H3-valid frame alignment.
