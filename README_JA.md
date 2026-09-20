@@ -10,7 +10,7 @@ Phase 2のNative ReferenceとPhase 3CのMulti-Keyを、同じ実GPU生成で組�
 
 Static START、START→END、3 Key、7 Key、2 References、疎なA+C References、Key時刻変更後の再Preview→Continueまで完走しています。全実行ケースでstep 3から再開し、新規noise、conditioning再encode、Reference再encode、schedule再構築はありませんでした。
 
-ただしD5〜D9のブラウザー上のstale GO拒否確認は、ChromeがローカルComfyUIタブを`ERR_BLOCKED_BY_CLIENT`で遮断したため未実施です。そのためPhase 3D全体はまだPASSに上げません。人物同一性や軌道品質も今回の判定対象外です。
+その後、D5〜D9のブラウザーstale-GO Gateも**すべてPASS**しました。Reference変更/順序入替、BBOX、Key時刻、Duration、Prompt変更はいずれも「新しいPreviewが必要」と拒否され、Queueは0/0のままでSamplingは開始していません。Phase 3D全体は、通常のブラウザーGO→Continue→Saveと保存Workflow再読込が未検証で、人物同一性・軌道品質も未評価のためPARTIALのままです。
 
 ## v1.5.0 — Phase 3C Multi-Key Timeline Transparency
 
