@@ -1,6 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.0";
+import * as H3Logic from "./logic.mjs?v=1.7.1";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -74,9 +74,8 @@ const outputTypes=new Set(["SaveVideo","SaveImage","PreviewImage","SaveAnimatedW
 const isDraft=node=>DRAFT_CLASSES.has(node?.comfyClass??node?.type);
 const isContinue=node=>CONTINUE_CLASSES.has(node?.comfyClass??node?.type);
 const pending=new Map();
-const workflowRuntime=new WeakMap();
-let activeWorkflowData=null;
-let incomingWorkflowData=null;
+const workflowRuntime=new Map();
+let activeWorkflowPath=null;
 let staleCheckTimer=null;
 let staleCheckRunning=false;
 const widget=(node,name)=>node?.widgets?.find(w=>w.name===name);
@@ -105,14 +104,45 @@ function captureRuntime(){
   return snapshots;
 }
 
-function rememberActiveRuntime(){
-  if(!activeWorkflowData||typeof activeWorkflowData!=="object")return;
-  workflowRuntime.set(activeWorkflowData,captureRuntime());
+function selectedWorkflowPath(){
+  const selectors=[
+    ".p-togglebutton-checked [data-workflow-path]",
+    ".p-togglebutton-checked[data-workflow-path]",
+    "[aria-pressed=true] [data-workflow-path]",
+    "[data-p-highlight=true] [data-workflow-path]",
+  ];
+  for(const selector of selectors){
+    const el=document.querySelector(selector);
+    const path=el?.dataset?.workflowPath;
+    if(path)return path;
+  }
+  return null;
 }
 
-function restoreRuntime(graphData){
-  if(!graphData||typeof graphData!=="object")return false;
-  const snapshots=workflowRuntime.get(graphData);
+function openWorkflowPaths(){
+  return new Set(Array.from(document.querySelectorAll("[data-workflow-path]"))
+    .map(el=>el?.dataset?.workflowPath)
+    .filter(path=>typeof path==="string"&&path.length));
+}
+
+function pruneClosedWorkflowRuntime(){
+  const open=openWorkflowPaths();
+  if(!open.size)return;
+  for(const path of workflowRuntime.keys()){
+    if(!open.has(path))workflowRuntime.delete(path);
+  }
+}
+
+function rememberActiveRuntime(){
+  const path=activeWorkflowPath??selectedWorkflowPath();
+  if(!path)return;
+  const snapshots=captureRuntime();
+  if(Object.keys(snapshots).length)workflowRuntime.set(path,snapshots);
+}
+
+function restoreRuntime(path){
+  if(!path)return false;
+  const snapshots=workflowRuntime.get(path);
   if(!snapshots)return false;
   let restored=false;
   for(const [id,runtime] of Object.entries(snapshots)){
@@ -362,7 +392,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.0",
+      version: "1.7.1",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -384,11 +414,16 @@ app.registerExtension({
       document.head.appendChild(css);
     }
 
-    api.addEventListener("graphChanged",e=>{
-      const next=e.detail;
-      if(next&&typeof next==="object")activeWorkflowData=next;
-      scheduleReadyValidation();
-    });
+    api.addEventListener("graphChanged",()=>scheduleReadyValidation());
+
+    for(const eventName of ["input","change","mouseup","keyup"]){
+      window.addEventListener(eventName,()=>scheduleReadyValidation(),true);
+    }
+
+    if(document.body){
+      const observer=new MutationObserver(()=>pruneClosedWorkflowRuntime());
+      observer.observe(document.body,{childList:true,subtree:true});
+    }
 
     for(const event of ["execution_error","execution_interrupted","execution_success"]){
       api.addEventListener(event,e=>{
@@ -409,19 +444,17 @@ app.registerExtension({
     }
   },
 
-  beforeConfigureGraph(graphData){
-    if(activeWorkflowData&&typeof activeWorkflowData==="object"){
-      workflowRuntime.set(activeWorkflowData,captureRuntime());
-    }
-    incomingWorkflowData=graphData;
+  beforeLoadGraph(){
+    rememberActiveRuntime();
   },
 
-  afterConfigureGraph(){
-    activeWorkflowData=incomingWorkflowData;
-    incomingWorkflowData=null;
-    queueMicrotask(()=>{
-      const restored=restoreRuntime(activeWorkflowData);
-      if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.");
+  afterLoadGraph(){
+    requestAnimationFrame(()=>{
+      const path=selectedWorkflowPath();
+      activeWorkflowPath=path;
+      const restored=restoreRuntime(path);
+      if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.",path);
+      pruneClosedWorkflowRuntime();
     });
   },
 
