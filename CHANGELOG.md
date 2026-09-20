@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0 - 2026-09-20
+
+- Add Phase 4A Preview / GO State UX.
+- Present Draft and Continue as one synchronized review gate in the browser UI.
+- Add explicit `PREVIEW REQUIRED`, `PREVIEW RUNNING`, `READY TO GO`, `PREVIEW STALE`, `CONTINUING`, `COMPLETE`, and error states.
+- Move Preview / New Seed / GO controls into the status panel and disable GO unless the connected Draft is currently reviewed and valid.
+- Mirror Draft readiness to the directly connected Continue node.
+- Keep the GO-time graph signature re-check; stale settings invalidate UI approval before Queue.
+- Saved workflows still never restore approval/state IDs and reopen in Preview-required state.
+- Keep backend sampler/state/reference/structured contracts unchanged.
+- Add pure JavaScript state-contract tests and browser-extension syntax checks in CI.
+
 ## 1.5.0 - 2026-09-19
 
 - Add Phase 3C Multi-Key Timeline Transparency.
