@@ -63,6 +63,26 @@ Unchanged:
 - AV latent
 - sampling equations
 
+## First real-device attempt
+
+The first Phase 4A browser attempt reached the backend and completed a Draft Preview, but A0 was blocked because the Phase 4A panel/buttons were absent even on a newly added Draft Sampler.
+
+This means the sampler path was operational while the frontend extension had not registered successfully.
+
+Main was hardened to avoid a stale `logic.mjs` dependency breaking the whole extension after the new Phase 4A export was introduced. The frontend now also exposes:
+
+```js
+globalThis.__H3_DRAFT_CONTINUE_UI__
+```
+
+Expected after load:
+
+```js
+{ loaded: true, version: "1.6.0", logicStateContract: "native" }
+```
+
+A0–A7 still require a fresh browser/GPU rerun.
+
 ## Acceptance gate
 
 - A0 load → Preview required
