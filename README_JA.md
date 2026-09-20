@@ -1,6 +1,28 @@
-# MiniMax H3 Draft Continue — v1.5.0
+# MiniMax H3 Draft Continue — v1.6.0
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## v1.6.0 — Phase 4A Preview / GO State UX
+
+DraftとContinueを、ブラウザー上で1つのReview Gateとして同期表示するようにしました。
+
+状態は明示的に、
+
+- `PREVIEW REQUIRED`
+- `PREVIEW RUNNING`
+- `READY TO GO`
+- `PREVIEW STALE`
+- `CONTINUING`
+- `COMPLETE`
+- Error
+
+へ整理しています。
+
+Preview / New Seed / GOボタンはstatus panel内へ統合し、接続Draftが有効なPreview承認状態のときだけGOを有効化します。GO直前のgraph signature再確認は従来どおり残しているため、UI表示だけを信用してQueueすることはありません。
+
+Workflow保存・再読込時には承認状態やState IDを復元せず、必ず`PREVIEW REQUIRED`へ戻ります。
+
+Phase 4AはFrontend UXのみの変更で、SamplerEngine、Draft State、Reference/Structured hash、SIGMAS、Noise、Resume計算には変更ありません。
 
 ## Phase 3D — Reference + Structured Combined Integration
 
