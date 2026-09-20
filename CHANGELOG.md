@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.4 - 2026-09-21
+
+- Add a backward-compatible lifecycle bridge for ComfyUI Frontend 1.52.7.
+- Confirmed Frontend 1.52.7 does not invoke the newer `beforeLoadGraph` / `afterLoadGraph` extension hooks used by v1.7.3.
+- Wrap the stable `app.loadGraphData()` entry point instead: capture stable Draft review state immediately before graph replacement and restore it after the load resolves.
+- Keep the session cache keyed by the live workflow `changeTracker` object, so open-tab switches can restore `READY / STALE / COMPLETE`, while close/reopen creates a new tracker and still requires a new Preview.
+- Only bridge clean graph replacement loads; undo/redo style `clean=false` loads are not treated as workflow-tab lifecycle restores.
+- Keep the already-passing B3 live stale-signature detection unchanged.
+- Add `web/lifecycle.mjs` and dedicated Node tests covering before/load/after ordering, idempotent installation, load-error propagation, and bridge-hook isolation.
+- Add lifecycle module syntax checking to CI.
+- Phase 4B remains PARTIAL until B2/B7 pass on Frontend 1.52.7.
+
 ## 1.7.3 - 2026-09-21
 
 - Start Phase 4B lifecycle / stale-state management.
