@@ -4,6 +4,26 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## v1.6.0 — Preview / GO State UX (Phase 4A)
+
+Draft and Continue now render as one synchronized browser review gate.
+
+The UI exposes a small explicit state machine:
+
+- `PREVIEW REQUIRED`
+- `PREVIEW RUNNING`
+- `READY TO GO`
+- `PREVIEW STALE`
+- `CONTINUING`
+- `COMPLETE`
+- error
+
+Preview / New Seed / GO controls now live inside the status panel. GO is disabled unless the directly connected Draft has a valid reviewed Preview. GO still performs the full upstream graph signature check immediately before Queue, so the UI does not replace the existing safety contract.
+
+Saved workflows never restore approval. Reopen always returns to Preview-required state.
+
+Phase 4A is frontend-only: SamplerEngine, Draft State, Reference/Structured hashes, SIGMAS, noise and resume math are unchanged.
+
 ## Phase 3D — Reference + Structured combined integration
 
 Phase 2 Native Reference and Phase 3C Multi-Key have now been exercised together on the real GPU backend.
