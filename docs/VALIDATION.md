@@ -146,22 +146,42 @@ Resource peaks:
 
 No OOM, NaN, crash, or failed GPU execution occurred.
 
-### Why Phase 3D is not yet full PASS
+### Browser stale-state gate D5–D9
 
-D5–D9 browser/UI stale-state rejection tests were **not run** because Chrome blocked the agent-created local ComfyUI tabs with `ERR_BLOCKED_BY_CLIENT`.
+**PASS.**
 
-Not yet verified in the browser:
+Using a separate unsaved browser workflow tab, each approved input was mutated after Preview and the existing GO control was pressed.
 
-- D5: stale Reference replacement after Preview
-- D6: stale Reference order change
-- D7: stale START/END or intermediate-Key BBOX change
-- D8: stale Key-time / Duration change
-- D9: stale compiled-prompt change
+Verified cases:
 
-Direct API execution proves the combined server-side generation path but does not substitute for the requested browser/UI pre-queue stale-GO rejection gate.
+- D5: Reference A image changed → stale GO rejected
+- D6: Reference A/C assignments swapped → stale GO rejected
+- D7: A-Key 1 BBOX changed → stale GO rejected
+- D8a: A-Key 1 time changed 1.25 s → 1.50 s → stale GO rejected
+- D8b: Duration changed 5.0 s → 6.0 s → stale GO rejected
+- D9: scene/prompt text changed → stale GO rejected
 
-Also not graded:
+For every case:
 
+- UI required a new Preview before GO
+- request was not queued
+- `queue_running=[]`
+- `queue_pending=[]`
+- no continuation sampling started
+
+Observed browser Preview-setup peaks:
+
+- system RAM: ~59.98 / 63.93 GiB
+- VRAM: ~15.42 / 15.93 GiB
+
+No OOM or crash occurred.
+
+### Why Phase 3D remains PARTIAL
+
+The combined GPU/API generation path and browser stale-state rejection gate are both PASS, but the following are still not verified:
+
+- valid browser GO → Continue → Save flow using the combined Reference + Multi-Key workflow
+- saved-workflow reload and subsequent valid Preview/GO
 - subjective identity retention
 - BBOX trajectory fidelity
 - per-Key path-following quality
@@ -170,7 +190,9 @@ Also not graded:
 Therefore:
 
 - Phase 3D GPU/API combined integration: **PASS**
-- Phase 3D browser stale-state gate: **PENDING**
+- Phase 3D browser stale-state gate: **PASS**
+- Phase 3D browser valid-GO/save/reload workflow: **PENDING**
+- Phase 3D subjective visual quality: **NOT GRADED**
 - Phase 3D overall: **PARTIAL**
 
 ## Current certification
@@ -182,7 +204,8 @@ Therefore:
 - Phase 3B START→END structured layout: **GPU PASS**
 - Phase 3C Multi-Key Timeline: **GPU PASS**
 - Phase 3D Reference + Structured GPU/API integration: **PASS (8/8 executed)**
-- Phase 3D browser stale-state rejection gate: **PENDING**
+- Phase 3D browser stale-state rejection gate: **PASS (D5–D9)**
+- Phase 3D browser valid-GO/save/reload workflow: **PENDING**
 - Phase 3D overall: **PARTIAL**
 - subjective START→END motion quality: **not graded**
 - subjective Multi-Key path-following quality: **not graded**
