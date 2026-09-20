@@ -24,6 +24,8 @@ Saved workflows never restore approval. Reopen always returns to Preview-require
 
 Phase 4A is frontend-only: SamplerEngine, Draft State, Reference/Structured hashes, SIGMAS, noise and resume math are unchanged.
 
+**Phase 4A A0–A7 is GPU/UI PASS** on RTX 5060 Ti. The final A4 retest verified terminal `REVIEWED / COMPLETE`, GO disabled, successful SaveVideo, and an empty Queue after completion.
+
 ## Phase 3D — Reference + Structured combined integration
 
 Phase 2 Native Reference and Phase 3C Multi-Key have now been exercised together on the real GPU backend.
@@ -121,7 +123,7 @@ The Draft report includes:
 - Reference payload SHA-256
 - `reference_reencoded=false`
 
-Phase 1 Generic Draft/Continue is user GPU PASS. Phase 2 Reference support is implemented and host-tested; the R0-R3 real-GPU gate is still pending.
+Phase 1 Generic Draft/Continue is user GPU PASS. Phase 2 Native Reference Transparency is also GPU PASS.
 
 ## Existing workflow integration
 
