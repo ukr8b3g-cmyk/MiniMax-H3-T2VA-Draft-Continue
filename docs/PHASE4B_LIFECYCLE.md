@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.4 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
+Status: v1.7.4 on main; B2/B3/B7 browser gates PASS; Phase 4B overall **PARTIAL** pending B4/B5/B8/B9/B10.
 
 ## Purpose
 
@@ -153,3 +153,24 @@ The bridge:
 B3 live stale detection is unchanged and remains PASS.
 
 Targeted retest: B2 and B7 on Frontend 1.52.7.
+
+
+## v1.7.4 browser retest result
+
+After a full browser reload, the compatibility bridge was actually active on ComfyUI Frontend 1.52.7.
+
+Observed diagnostics:
+
+- `loadGraphData-wrapper` startup log
+- capture log on Workflow switch
+- restore log on return
+
+Results:
+
+- B2 PASS — READY survived Workflow tab round-trip
+- B3 PASS — upstream Slot A description edit immediately produced STALE and disabled GO
+- B7 PASS — COMPLETE survived Workflow tab round-trip
+
+The earlier apparent v1.7.4 failure is invalid for gate purposes because the browser page still had an old v1.1.1-era `draft.js` module loaded in memory.
+
+Remaining Phase 4B cases: B4, B5, B8, B9, B10.
