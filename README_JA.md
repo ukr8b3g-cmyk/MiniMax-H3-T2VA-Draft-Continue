@@ -24,6 +24,8 @@ Workflow保存・再読込時には承認状態やState IDを復元せず、必�
 
 Phase 4AはFrontend UXのみの変更で、SamplerEngine、Draft State、Reference/Structured hash、SIGMAS、Noise、Resume計算には変更ありません。
 
+**Phase 4A A0〜A7はRTX 5060 Ti実機でGPU/UI PASS**です。最終A4再テストでは、Continue/Save成功後も`Draft: REVIEWED / Continue: COMPLETE`を維持し、GO disabled、Queue 0/0まで確認しました。
+
 ## Phase 3D — Reference + Structured Combined Integration
 
 Phase 2のNative ReferenceとPhase 3CのMulti-Keyを、同じ実GPU生成で組み合わせて検証しました。
@@ -111,7 +113,7 @@ Preview後に次のどれかが変わった場合、古いGOは拒否します�
 
 ReportにはReferenceの枚数・kind分布・順序・tensor shape/dtype・Reference payload SHA-256を表示します。
 
-**Phase 1 Generic Draft/Continueは実GPU PASS済み。Phase 2は実装・Host回帰テスト済みで、Reference実GPU Gateはこれからです。**
+**Phase 1 Generic Draft/Continue、Phase 2 Native Reference Transparencyはいずれも実GPU PASS済みです。**
 
 詳細: [Phase 2 Reference GPU Gate](docs/REFERENCE_GATE.md)
 
