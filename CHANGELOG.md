@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.7.0 - 2026-09-20
+## 1.7.1 - 2026-09-20
 
 - Start Phase 4B lifecycle / stale-state management.
 - Preserve stable in-session review states (`READY`, `STALE`, `COMPLETE`) when switching between already-open Workflow tabs.
@@ -11,6 +11,8 @@
 - Keep GO-time signature verification as the final safety check.
 - Initial Phase 4B real-device matrix: B0/B1/B6 PASS; B2/B3/B7 exposed lifecycle gaps; B4/B5/B8/B9/B10 not yet run.
 - Phase 4B implementation targets the B2/B3/B7 failures; real-browser retest remains required.
+- Correct lifecycle implementation after confirming ComfyUI clones workflow JSON before `beforeConfigureGraph`: capture outgoing state in `beforeLoadGraph` before `clean()`, restore after `afterLoadGraph`, key session state by active workflow tab path, and prune cache when tabs close.
+- Expand live stale detection beyond `graphChanged` to browser `input/change/mouseup/keyup` activity so custom DOM and LiteGraph widget edits also trigger reviewed-signature revalidation.
 
 ## 1.6.0 - 2026-09-20
 
