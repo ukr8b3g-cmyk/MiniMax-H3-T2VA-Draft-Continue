@@ -483,3 +483,35 @@ Corrected implementation:
 - trigger READY signature revalidation from `graphChanged` plus `input/change/mouseup/keyup` user interaction events
 
 B2/B3/B7 require another targeted browser retest on v1.7.1.
+
+
+### Phase 4B v1.7.1 retest
+
+Result:
+
+- B2 FAIL — READY still reset to `PREVIEW REQUIRED` after tab round-trip
+- B3 PASS — Slot A description edit immediately produced `PREVIEW STALE / NEW PREVIEW REQUIRED`, GO disabled, Queue stayed empty
+- B7 FAIL — COMPLETE still reset to `PREVIEW REQUIRED` after tab round-trip
+
+Runtime remained healthy:
+
+- Preview ~64.8 s
+- Continue resumed at step 3 and completed
+- no OOM
+- peak RAM ~61.4 / 63.9 GiB
+- peak VRAM ~15.56 / 15.93 GiB
+- final Queue empty
+
+The v1.7.1 stale-detection path is therefore validated, while tab-state identity was still wrong.
+
+### Phase 4B v1.7.2 tab identity correction
+
+Current ComfyUI frontend exposes the live workflow store through:
+
+`app.extensionManager.workflow.activeWorkflow.path`
+
+and `openWorkflows`.
+
+v1.7.2 now uses those values directly for session review-state keys and close pruning. DOM-selected tab lookup is retained only as a fallback.
+
+This specifically targets B2/B7. B3 does not need regression rerun unless desired.
