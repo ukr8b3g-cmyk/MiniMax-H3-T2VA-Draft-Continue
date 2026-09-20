@@ -10,7 +10,9 @@
 - Keep the already-passing B3 live stale-signature detection unchanged.
 - Add `web/lifecycle.mjs` and dedicated Node tests covering before/load/after ordering, idempotent installation, load-error propagation, and bridge-hook isolation.
 - Add lifecycle module syntax checking to CI.
-- Phase 4B remains PARTIAL until B2/B7 pass on Frontend 1.52.7.
+- Frontend 1.52.7 browser retest after full reload: B2 PASS, B3 PASS, B7 PASS. READY and COMPLETE survive open-tab round-trips and live upstream edits invalidate READY to STALE.
+- Exclude the earlier apparent v1.7.4 B2/B7 failure because the browser page still had an old v1.1.1-era `draft.js` module resident in memory.
+- Phase 4B remains PARTIAL until B4/B5/B8/B9/B10 are completed.
 
 ## 1.7.3 - 2026-09-21
 
