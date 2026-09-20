@@ -1,6 +1,6 @@
 # Phase 4A — Preview / GO State UX
 
-Status: implementation complete on main; real browser/GPU UX gate pending.
+Status: **GPU/UI PASS / COMPLETE** — 2026-09-20 JST.
 
 ## Goal
 
@@ -81,7 +81,7 @@ Expected after load:
 { loaded: true, version: "1.6.0", logicStateContract: "native" }
 ```
 
-A0–A7 still require a fresh browser/GPU rerun.
+The initial A0 loading problem was fixed and the subsequent browser/GPU matrix completed.
 
 ## Acceptance gate
 
@@ -117,3 +117,31 @@ The successful Queue history contained both a Draft `ready` report and a Continu
 
 `COMPLETE` is now terminal until the user explicitly starts a new Preview. Starting Preview moves the state to `preview_queued`, after which the new Draft `ready` report is accepted normally.
 
+
+## Final real-device verdict
+
+**A0–A7 PASS.**
+
+The final A4 retest confirmed that successful Continue completion is terminal in the UI until a new Preview is explicitly started.
+
+Final A4 evidence:
+
+- Preview 70.1 s → `READY · 3/6`
+- Continue resumed at step 3 and completed the remaining 3 transitions in 36.1 s
+- no new noise
+- no conditioning re-encode
+- no schedule rebuild
+- no Reference re-encode
+- SaveVideo succeeded
+- Draft remained `REVIEWED`
+- Continue remained `COMPLETE`
+- GO remained disabled
+- Queue ended at 0 running / 0 pending
+- no OOM
+
+Peak observed:
+
+- RAM ~60.7 / 63.9 GiB
+- VRAM ~15.5 / 15.9 GiB
+
+Together with the already-passed A0–A3 and A5–A7 checks, Phase 4A is **GPU/UI PASS / COMPLETE**.
