@@ -4,7 +4,7 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
-## v1.7.1 — Lifecycle / Stale-State Management (Phase 4B)
+## v1.7.2 — Lifecycle / Stale-State Management (Phase 4B)
 
 Phase 4B keeps reviewed UI state across normal switches between already-open Workflow tabs, without serializing approval into the workflow file.
 
@@ -12,7 +12,7 @@ Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser 
 
 While a Draft is `READY`, ComfyUI's `graphChanged` event now triggers a debounced upstream signature re-check. Execution-relevant edits immediately move the UI to `PREVIEW STALE / NEW PREVIEW REQUIRED`; the existing GO-time signature check remains the final guard.
 
-Initial Phase 4B real-device testing was PARTIAL: B0/B1/B6 passed, while B2/B3/B7 exposed the lifecycle gaps now addressed on main. B4/B5/B8/B9/B10 remain pending.
+Phase 4B remains PARTIAL. v1.7.1 real-browser retest confirmed B3 live stale detection PASS, while B2/B7 tab round-trip persistence still failed. v1.7.2 now keys session state from ComfyUI's authoritative `app.extensionManager.workflow.activeWorkflow.path` instead of DOM tab selection. B4/B5/B8/B9/B10 remain pending.
 
 ## v1.6.0 — Preview / GO State UX (Phase 4A)
 
