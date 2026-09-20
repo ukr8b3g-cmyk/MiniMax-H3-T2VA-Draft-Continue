@@ -192,7 +192,17 @@ async function queue(node,action){
     pending.set(response.prompt_id,{node,draft});
   }catch(error){
     node._h3Pending=false;
-    markError(node,errorText(error));
+    const linked=isDraft(node)?node:directDraftForContinue(node);
+    const message=errorText(error);
+    if(linked&&linked._h3Phase==="stale"){
+      linked._h3Message=linked._h3Message||message;
+      syncDraft(linked);
+    }else if(linked&&linked._h3Phase==="preview_required"){
+      linked._h3Message=message;
+      syncDraft(linked);
+    }else{
+      markError(node,message);
+    }
     console.error("[H3 Draft Continue]",error);
   }
 }
@@ -283,7 +293,7 @@ app.registerExtension({
 
       if(report.status==="awaiting_approval"){
         const linked=directDraftForContinue(this);
-        if(linked?. _h3Ready)syncDraft(linked);
+        if(linked?._h3Ready)syncDraft(linked);
         else if(linked)setDraftPhase(linked,"preview_required",{clearReady:true});
         else standalonePhase(this,"preview_required");
       }
