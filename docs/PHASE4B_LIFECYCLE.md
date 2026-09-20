@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.1 implementation on main; GPU/browser gate **PARTIAL / retest pending**.
+Status: v1.7.2 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
 
 ## Purpose
 
@@ -88,3 +88,27 @@ v1.7.1 instead:
 - adds DOM/LiteGraph interaction-triggered signature checks in addition to `graphChanged`
 
 This specifically targets B2, B3 and B7 while keeping close/reopen approval reset intact.
+
+
+## v1.7.2 active-workflow identity fix
+
+The v1.7.1 retest produced B3 PASS but B2/B7 still FAIL.
+
+The remaining issue was not state capture timing; it was workflow identity. DOM tab-selection classes are not a reliable source of the active workflow path across current ComfyUI render modes.
+
+ComfyUI exposes the authoritative store at:
+
+```js
+app.extensionManager.workflow.activeWorkflow.path
+app.extensionManager.workflow.openWorkflows
+```
+
+v1.7.2 uses those directly for:
+
+- outgoing session-state key
+- incoming restore key
+- closed-tab cache pruning
+
+DOM path lookup remains fallback only.
+
+Targeted retest: B2 and B7.
