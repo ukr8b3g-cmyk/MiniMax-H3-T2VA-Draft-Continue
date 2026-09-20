@@ -2,7 +2,7 @@
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
 
-## v1.7.1 — Phase 4B Lifecycle / Stale-State Management
+## v1.7.2 — Phase 4B Lifecycle / Stale-State Management
 
 Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った場合**に、レビュー済みUI状態をブラウザーセッション内だけで保持します。v1.7.1ではComfyUIのgraph clone/clean順序に合わせ、`beforeLoadGraph`で旧Stateを捕捉し、`afterLoadGraph`でWorkflowタブpath単位に復元する方式へ修正しました。
 
@@ -10,7 +10,7 @@ Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った�
 
 また、Draftが`READY`の間はComfyUIの`graphChanged`を監視し、上流graph signatureを再確認します。Prompt、Layout、Reference、Sampler入力など実行内容に関わる変更を検出すると、GOを押す前に`PREVIEW STALE / NEW PREVIEW REQUIRED`へ移行してGOを無効化します。GO直前のsignature再確認も残します。
 
-最初のPhase 4B実機テストはPARTIALで、B0/B1/B6はPASS、B2/B3/B7でlifecycle問題を確認しました。これらはmainで修正済みで、B4/B5/B8/B9/B10を含む再Gateが必要です。
+Phase 4BはPARTIALのままです。v1.7.1実機再テストではB3の即時STALE検出はPASSしましたが、B2/B7のタブ往復保持はFAILでした。v1.7.2ではDOMの選択タブ推定をやめ、ComfyUIの`app.extensionManager.workflow.activeWorkflow.path`を正式なセッションキーとして使うよう修正しました。B4/B5/B8/B9/B10は未実施です。
 
 ## v1.6.0 — Phase 4A Preview / GO State UX
 
