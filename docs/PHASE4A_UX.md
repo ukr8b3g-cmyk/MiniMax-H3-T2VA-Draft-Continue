@@ -93,3 +93,18 @@ A0–A7 still require a fresh browser/GPU rerun.
 - A5 upstream change → stale, no Queue
 - A6 fresh Preview after stale → READY
 - A7 save/reopen → approval reset, Preview required
+
+## A4 completion-display fix
+
+The first full A0–A7 real-device pass reached A4 with successful Continue sampling and successful video save, but the UI stayed at `READY TO GO` and left GO enabled.
+
+The browser now treats the tracked prompt-level `execution_success` event as a completion fail-safe:
+
+- if the submitted node is Continue
+- and the synchronized Draft state is still `continue_queued`
+- transition the review pair to `complete`
+
+The existing node-level `onExecuted` report path remains in place and can still supply the richer completion detail. The success-event transition only closes the UI state when that report path did not finalize the panel.
+
+Only A4 needs targeted real-browser retest after this fix.
+
