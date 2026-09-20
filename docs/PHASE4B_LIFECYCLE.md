@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.2 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
+Status: v1.7.3 implementation on main; GPU/browser gate **PARTIAL / B2+B7 retest pending**.
 
 ## Purpose
 
@@ -112,3 +112,20 @@ v1.7.2 uses those directly for:
 DOM path lookup remains fallback only.
 
 Targeted retest: B2 and B7.
+
+
+## v1.7.3 tracker-keyed session state
+
+v1.7.2 still failed B2 and B7, so workflow path identity was removed from the runtime contract.
+
+Session review state is now keyed by the active workflow's live `changeTracker` object.
+
+Why this matches ComfyUI lifecycle:
+
+- an already-open Workflow keeps the same `changeTracker` when switching tabs
+- closing a persisted Workflow calls `unload()` and clears that tracker
+- reopening constructs a new `changeTracker`
+
+The cache is a `WeakMap`, so it remains browser-session-only and cannot serialize into workflow files.
+
+Targeted retest remains B2 and B7 only. B3 already passed and its stale-signature implementation is unchanged.
