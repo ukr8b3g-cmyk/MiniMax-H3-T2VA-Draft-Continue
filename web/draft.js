@@ -112,6 +112,7 @@ function actionButton(label,callback){
   button.type="button";
   button.className="h3-draft-action";
   button.textContent=label;
+  button.addEventListener("pointerdown",event=>event.stopPropagation());
   button.addEventListener("click",event=>{
     event.preventDefault();
     event.stopPropagation();
