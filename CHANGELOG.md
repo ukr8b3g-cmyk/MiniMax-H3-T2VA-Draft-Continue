@@ -16,7 +16,9 @@
 - Verified stale Key-BBOX, Key-time, and Duration edits reject old GO; fresh Preview then resumes from step 3 and completes.
 - 7.5 s timeline produced 192 frames / 8.0 s after H3-valid frame alignment.
 - Observed peak system RAM ~59.35 / 63.93 GiB and VRAM ~15.40 / 15.93 GiB; memory headroom remains a production-hardening warning.
-- Phase 3D combined Reference + Structured GPU/API matrix: 8/8 executed cases PASS; overall Phase 3D remains PARTIAL because browser stale-state tests D5–D9 were not run.
+- Phase 3D combined Reference + Structured GPU/API matrix: 8/8 executed cases PASS.
+- Phase 3D browser stale-GO gate D5–D9 PASS: Reference replacement/order, BBOX, Key-time, Duration and Prompt mutations all rejected old GO before Queue.
+- Phase 3D remains PARTIAL because valid browser GO→Continue→Save and saved-workflow reload are still unverified; subjective identity/trajectory quality is not graded.
 - Phase 3D observed peaks: VRAM 15,637 / 16,311 MiB and system RAM 60.155 / 63.927 GiB; no OOM or crash.
 - D3B requested 7.5 s and produced 192 frames / 8.0 s after H3-valid frame alignment.
 - Corrected D10 verified per-slot Key-time change (A K1=0.30 while C K1=0.25), re-Preview, step-3 resume, and final video completion.
