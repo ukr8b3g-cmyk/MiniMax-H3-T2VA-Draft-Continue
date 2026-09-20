@@ -12,6 +12,7 @@
 - Keep backend sampler/state/reference/structured contracts unchanged.
 - Add pure JavaScript state-contract tests and browser-extension syntax checks in CI.
 - After the first real-device A0 attempt showed no Phase 4A panel despite successful backend Preview sampling, harden frontend module loading with a versioned `logic.mjs` import, namespace import fallback, and an explicit UI-load diagnostic marker.
+- Fix A4 completion display: use tracked `execution_success` as a frontend fail-safe to transition a successful Continue from `continue_queued` to `complete` when the node-level UI report did not finalize the panel.
 
 ## 1.5.0 - 2026-09-19
 
