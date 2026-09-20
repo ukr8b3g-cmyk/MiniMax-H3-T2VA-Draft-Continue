@@ -102,12 +102,38 @@ Observed browser Preview-setup peaks:
 
 No OOM or crash occurred.
 
+## Browser valid-GO and saved-workflow reload
+
+G11/G12: **PASS**.
+
+G11 verified valid browser Preview → GO → Continue → Save on the combined Reference + Multi-Key workflow.
+
+G12 verified the persistence boundary by saving the test workflow, closing its tab, reopening it, and confirming that approval state was reset. A fresh GPU Preview with a new seed was then generated, followed by a valid GO → Continue → Save.
+
+Verified in both flows:
+
+- two native References
+- `scope=multi_key`
+- six keys
+- step-3 resume
+- no new noise
+- no conditioning re-encode
+- no Reference re-encode
+- no schedule rebuild
+- successful saved video
+- final queue empty
+
+Observed peak across G11/G12:
+
+- system RAM: ~60.62 / 63.93 GiB
+- VRAM: ~15.39 / 15.93 GiB
+
+No OOM, crash, or sampling error occurred.
+
 ## Remaining qualification
 
 Still not verified:
 
-- valid browser GO → Continue → Save using the combined workflow
-- saved-workflow reload followed by valid Preview/GO
 - subjective identity/trajectory quality
 
 ## Quality boundary
@@ -124,8 +150,9 @@ Not graded in this gate:
 
 - GPU/API combined integration: **PASS**
 - Browser stale-state rejection: **PASS (D5–D9)**
-- Browser valid-GO/save/reload: **PENDING**
+- Browser valid-GO/save/reload: **PASS (G11/G12)**
+- Runtime/integration qualification: **PASS**
 - Subjective visual quality: **NOT GRADED**
-- Phase 3D overall: **PARTIAL**
+- Phase 3D overall: **PARTIAL (visual-quality gate only)**
 
-Full Phase 3D PASS remains intentionally withheld until the remaining browser valid-GO/save/reload workflow is verified and, if required by the release gate, the separate visual-quality review is completed.
+All defined runtime/integration gates are now closed and PASS. Overall Phase 3D remains PARTIAL only because the separately defined subjective visual-quality gate has not been graded.
