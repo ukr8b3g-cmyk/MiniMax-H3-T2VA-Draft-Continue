@@ -1,11 +1,24 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.6.0";
+import * as H3Logic from "./logic.mjs?v=1.7.0";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
   DRAFT_CLASSES, CONTINUE_CLASSES, externalSeedTarget,
 } = H3Logic;
+
+const sessionPhaseRestorable = H3Logic.sessionPhaseRestorable ?? (phase =>
+  phase === "ready" || phase === "stale" || phase === "complete");
+const copyReviewRuntime = H3Logic.copyReviewRuntime ?? (runtime => {
+  if(!sessionPhaseRestorable(runtime?.phase)) return null;
+  return {
+    phase:runtime.phase,
+    ready:runtime.ready??null,
+    message:runtime.message??"",
+    previewWall:Number.isFinite(runtime.previewWall)?runtime.previewWall:null,
+    approvedStateId:typeof runtime.approvedStateId==="string"?runtime.approvedStateId:null,
+  };
+});
 
 const acceptDraftReadyReport = H3Logic.acceptDraftReadyReport ?? ((phase) => {
   if (phase === "continue_queued" || phase === "complete") return false;
@@ -61,10 +74,92 @@ const outputTypes=new Set(["SaveVideo","SaveImage","PreviewImage","SaveAnimatedW
 const isDraft=node=>DRAFT_CLASSES.has(node?.comfyClass??node?.type);
 const isContinue=node=>CONTINUE_CLASSES.has(node?.comfyClass??node?.type);
 const pending=new Map();
+const workflowRuntime=new WeakMap();
+let activeWorkflowData=null;
+let incomingWorkflowData=null;
+let staleCheckTimer=null;
+let staleCheckRunning=false;
 const widget=(node,name)=>node?.widgets?.find(w=>w.name===name);
 
 function errorText(error){
   return error?.response?.error?.message??error?.message??String(error);
+}
+
+function draftRuntime(node){
+  return copyReviewRuntime({
+    phase:node?._h3Phase,
+    ready:node?._h3Ready,
+    message:node?._h3Message,
+    previewWall:node?._h3PreviewWall,
+    approvedStateId:node?._h3ApprovedStateId,
+  });
+}
+
+function captureRuntime(){
+  const snapshots={};
+  for(const node of app.rootGraph?._nodes??[]){
+    if(!isDraft(node))continue;
+    const runtime=draftRuntime(node);
+    if(runtime)snapshots[String(node.id)]=runtime;
+  }
+  return snapshots;
+}
+
+function rememberActiveRuntime(){
+  if(!activeWorkflowData||typeof activeWorkflowData!=="object")return;
+  workflowRuntime.set(activeWorkflowData,captureRuntime());
+}
+
+function restoreRuntime(graphData){
+  if(!graphData||typeof graphData!=="object")return false;
+  const snapshots=workflowRuntime.get(graphData);
+  if(!snapshots)return false;
+  let restored=false;
+  for(const [id,runtime] of Object.entries(snapshots)){
+    const node=app.rootGraph?.getNodeById?.(isNaN(+id)?id:+id)??app.rootGraph?.getNodeById?.(id);
+    if(!isDraft(node)||!runtime)continue;
+    node._h3Phase=runtime.phase;
+    node._h3Ready=runtime.ready;
+    node._h3Message=runtime.message;
+    node._h3PreviewWall=runtime.previewWall;
+    node._h3ApprovedStateId=runtime.approvedStateId;
+    syncDraft(node);
+    restored=true;
+  }
+  return restored;
+}
+
+async function validateReadyDrafts(){
+  if(staleCheckRunning||app.configuringGraph)return;
+  const drafts=(app.rootGraph?._nodes??[]).filter(node=>isDraft(node)&&node._h3Phase==="ready"&&node._h3Ready?.graph_hash);
+  if(!drafts.length)return;
+  staleCheckRunning=true;
+  try{
+    const p=await app.graphToPrompt();
+    for(const draft of drafts){
+      if(draft._h3Phase!=="ready"||!draft._h3Ready?.graph_hash)continue;
+      let changed=false;
+      try{
+        changed=(await signature(p.output,String(draft.id)))!==draft._h3Ready.graph_hash;
+      }catch{
+        changed=true;
+      }
+      if(changed){
+        setDraftPhase(draft,"stale",{clearReady:true,message:"Settings changed after Preview."});
+      }
+    }
+    rememberActiveRuntime();
+  }finally{
+    staleCheckRunning=false;
+  }
+}
+
+function scheduleReadyValidation(){
+  if(staleCheckTimer)clearTimeout(staleCheckTimer);
+  staleCheckTimer=setTimeout(()=>{
+    staleCheckTimer=null;
+    void validateReadyDrafts();
+  },80);
 }
 
 function graphLink(graph,id){
@@ -145,6 +240,7 @@ function setDraftPhase(draft,phase,{ready,message,wall,clearReady=false}={}){
   if(message!==undefined)draft._h3Message=message;
   if(wall!==undefined)draft._h3PreviewWall=wall;
   syncDraft(draft);
+  rememberActiveRuntime();
 }
 
 function standalonePhase(node,phase,message=""){
@@ -266,7 +362,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.6.0",
+      version: "1.7.0",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -288,6 +384,12 @@ app.registerExtension({
       document.head.appendChild(css);
     }
 
+    api.addEventListener("graphChanged",e=>{
+      const next=e.detail;
+      if(next&&typeof next==="object")activeWorkflowData=next;
+      scheduleReadyValidation();
+    });
+
     for(const event of ["execution_error","execution_interrupted","execution_success"]){
       api.addEventListener(event,e=>{
         const id=e.detail?.prompt_id;
@@ -305,6 +407,22 @@ app.registerExtension({
         }
       });
     }
+  },
+
+  beforeConfigureGraph(graphData){
+    if(activeWorkflowData&&typeof activeWorkflowData==="object"){
+      workflowRuntime.set(activeWorkflowData,captureRuntime());
+    }
+    incomingWorkflowData=graphData;
+  },
+
+  afterConfigureGraph(){
+    activeWorkflowData=incomingWorkflowData;
+    incomingWorkflowData=null;
+    queueMicrotask(()=>{
+      const restored=restoreRuntime(activeWorkflowData);
+      if(restored)console.info("[H3 Draft Continue] Restored session review state for open workflow tab.");
+    });
   },
 
   async beforeRegisterNodeDef(nodeType,nodeData){
