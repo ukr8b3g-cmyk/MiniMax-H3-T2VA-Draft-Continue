@@ -12,7 +12,7 @@ Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser 
 
 While a Draft is `READY`, ComfyUI's `graphChanged` event now triggers a debounced upstream signature re-check. Execution-relevant edits immediately move the UI to `PREVIEW STALE / NEW PREVIEW REQUIRED`; the existing GO-time signature check remains the final guard.
 
-Phase 4B remains PARTIAL with only B10 pending. B0–B9 are PASS. v1.7.6 adds a page-local approval provenance boundary so Ctrl+F5/full reload cannot reuse READY/COMPLETE from the previous page, while normal open-tab B2/B7 restore remains supported.
+**Phase 4B B0–B10 is GPU/UI PASS / COMPLETE.** v1.7.6 adds a page-local approval provenance boundary so Ctrl+F5/full reload cannot reuse READY/COMPLETE from the previous page, while normal open-tab B2/B7 restore remains supported.
 
 ## v1.6.0 — Preview / GO State UX (Phase 4A)
 
