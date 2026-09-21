@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.4 on main; B2/B3/B7 browser gates PASS; Phase 4B overall **PARTIAL** pending B4/B5/B8/B9/B10.
+Status: v1.7.6 on main; B0–B9 PASS except only B10 pending retest. Phase 4B overall **PARTIAL**.
 
 ## Purpose
 
@@ -174,3 +174,32 @@ Results:
 The earlier apparent v1.7.4 failure is invalid for gate purposes because the browser page still had an old v1.1.1-era `draft.js` module loaded in memory.
 
 Remaining Phase 4B cases: B4, B5, B8, B9, B10.
+
+
+## v1.7.5 real-browser matrix extension
+
+User-confirmed results on Frontend 1.52.7 / UI 1.7.5:
+
+- B4 PASS — READY → prompt semantic change → STALE; STALE survived open-tab round trip
+- B5 PASS — STALE → New seed + Preview → READY / GO enabled
+- B8 PASS — READY → GO → COMPLETE, then New seed + Preview → READY
+- B9 PASS — save + close + reopen → PREVIEW REQUIRED / GO disabled
+- B10 FAIL — Ctrl+F5 reload unexpectedly returned to READY / GO enabled
+
+B10 showed startup Capture/Restore activity even though the lifecycle cache is a page-local WeakMap. The exact host mechanism was not proven, so v1.7.6 does not rely on guessing tracker reuse.
+
+## v1.7.6 page-provenance boundary
+
+Each Draft runtime now carries a page-local owner token that is created only by the currently evaluated `draft.js`.
+
+Rules:
+
+- explicit Preview in this page → page-owned
+- valid open-tab restore from this page's WeakMap → page-owned
+- GO may consume only a page-owned reviewed Draft
+- startup/historical `ready` or `complete` reports with no current-page pending execution are ignored
+- a full reload evaluates a new page token, so pre-reload approval cannot be captured or restored
+
+This preserves B2/B7 open-tab state while enforcing B10 reload reset without serializing approval.
+
+Targeted retest: B10 only.
