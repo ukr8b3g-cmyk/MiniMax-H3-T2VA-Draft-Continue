@@ -1,4 +1,4 @@
-# v1.7.5 — Loaded frontend verification / stale-page guard
+# v1.7.6 — Loaded frontend verification / stale-page guard
 
 ## Status and evidence boundary
 
@@ -9,19 +9,19 @@ retest is still required. The earlier version-specific failures remain historica
 results. Do not convert a file SHA check, a server restart, or a workflow node's
 saved `properties.ver` into evidence about the JavaScript executing in a page.
 
-v1.7.5 adds build verification rather than another speculative lifecycle rewrite.
+v1.7.6 adds build verification rather than another speculative lifecycle rewrite.
 The v1.7.4 `loadGraphData()` bridge, sampling equations, conditioning, references,
 SIGMAS, model choices and workflow graph are unchanged.
 
 ## Implemented behavior
 
 - `GET /h3draft/ui-build` (also `/api/h3draft/ui-build` through Core's API routes)
-  is a read-only, no-store build manifest. It reports UI build `1.7.5`, a backend
+  is a read-only, no-store build manifest. It reports UI build `1.7.6`, a backend
   process/session identifier, and SHA-256 hashes of the installed frontend files.
-- The evaluated UI must report build `1.7.5`, the native state implementation,
+- The evaluated UI must report build `1.7.6`, the native state implementation,
   and an actually installed lifecycle wrapper. A diagnostic string alone does
   not certify the wrapper. The manifest must match before controls unlock.
-- Draft/Continue panels show `UI 1.7.5 · VERIFIED` after a successful handshake.
+- Draft/Continue panels show `UI 1.7.6 · VERIFIED` after a successful handshake.
   Clicking this small badge repeats verification without generation or reload.
 - H3 browser requests carry the verified UI build and server-session headers.
   Missing/old headers are rejected with HTTP 409 **before the Core /prompt
@@ -45,7 +45,7 @@ release build stamp must change whenever a frontend compatibility release change
 ## What it cannot do
 
 A server-side update cannot replace JavaScript already evaluated in an open page.
-A one-time full page reload is required to load v1.7.5. HTTP no-store headers
+A one-time full page reload is required to load v1.7.6. HTTP no-store headers
 prevent future cache reuse but do not hot-upgrade a live page. Do not dynamically
 import another copy of the extension into the same page: duplicate callbacks and
 mixed versions are not a supported recovery path.
@@ -71,13 +71,13 @@ Expected fields:
 ```js
 {
   loaded: true,
-  version: "1.7.5",
+  version: "1.7.6",
   logicStateContract: "native",
   lifecycleBridge: "loadGraphData-wrapper", // or wrapper-existing
   frontendGuard: {
     status: "verified",
-    loadedBuild: "1.7.5",
-    serverBuild: "1.7.5"
+    loadedBuild: "1.7.6",
+    serverBuild: "1.7.6"
   }
 }
 ```
@@ -114,3 +114,17 @@ boundary, not a license to persist backend state.
 
 These tests do not certify real Windows/ComfyUI rendering or GPU output. They
 make the previously missed host-call path testable without another GPU run.
+
+
+## v1.7.6 page-local approval provenance
+
+B10 exposed a separate boundary from stale-build verification: a verified new page must
+still reject reviewed state that was not created by a Preview/GO action in that evaluated
+page.
+
+v1.7.6 assigns an in-memory page-local owner token to reviewed Draft state. Open-tab
+lifecycle restore inside the same page rebinds that token. A full page reload creates a
+different token, and startup/historical READY/COMPLETE reports are ignored unless a
+current-page execution is pending.
+
+This does not add persistent storage and does not alter model or sampling behavior.
