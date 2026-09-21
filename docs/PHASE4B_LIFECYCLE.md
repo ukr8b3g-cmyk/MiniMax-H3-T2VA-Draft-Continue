@@ -1,6 +1,6 @@
 # Phase 4B — Lifecycle / Stale-State Management
 
-Status: v1.7.6 on main; B0–B9 PASS except only B10 pending retest. Phase 4B overall **PARTIAL**.
+Status: v1.7.6 on main; **B0–B10 PASS / COMPLETE**.
 
 ## Purpose
 
@@ -202,4 +202,40 @@ Rules:
 
 This preserves B2/B7 open-tab state while enforcing B10 reload reset without serializing approval.
 
-Targeted retest: B10 only.
+Targeted retest result: **B10 PASS**.
+
+## v1.7.6 B10 final real-browser PASS
+
+Environment:
+
+- ComfyUI Frontend 1.52.7
+- UI build 1.7.6 VERIFIED
+- backend manifest 1.7.6 / assets available
+- Queue 0 before and after the test
+
+Sequence:
+
+1. page load started in `PREVIEW REQUIRED / WAITING FOR PREVIEW`, GO disabled
+2. Preview completed in ~73.4 s and reached `READY · 3/6 / READY TO GO`
+3. the test Chrome tab was fully reloaded
+4. after reload the workflow returned to `PREVIEW REQUIRED / WAITING FOR PREVIEW`
+5. GO remained disabled and Queue remained 0
+
+The pre-reload READY approval was not restored. Console showed the new UI and lifecycle bridge loading, but no stale Capture/Restore pair recreated the old approval.
+
+Therefore Phase 4B is **PASS / COMPLETE**.
+
+Final matrix:
+
+- B0 PASS
+- B1 PASS
+- B2 PASS
+- B3 PASS
+- B4 PASS
+- B5 PASS
+- B6 PASS
+- B7 PASS
+- B8 PASS
+- B9 PASS
+- B10 PASS
+
