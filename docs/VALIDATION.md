@@ -658,4 +658,32 @@ v1.7.6 fix:
 - B2/B7 semantics are preserved
 - B10 requires targeted real-browser retest
 
-Current Phase 4B status: **PARTIAL — B10 only pending**.
+### Phase 4B B10 v1.7.6 final retest — PASS
+
+Real-browser retest on ComfyUI Frontend 1.52.7 / UI 1.7.6:
+
+- initial load: `PREVIEW REQUIRED / WAITING FOR PREVIEW`, GO disabled
+- Preview: ~73.4 s → `READY · 3/6 / READY TO GO`
+- full reload of the same test tab
+- after reload: `PREVIEW REQUIRED / WAITING FOR PREVIEW`, GO disabled
+- Queue remained empty
+- no stale READY/COMPLETE restoration occurred
+- no OOM or generation failure observed
+
+The page-local approval provenance boundary therefore passed the B10 reload-reset requirement.
+
+Final Phase 4B matrix:
+
+- B0 PASS
+- B1 PASS
+- B2 PASS
+- B3 PASS
+- B4 PASS
+- B5 PASS
+- B6 PASS
+- B7 PASS
+- B8 PASS
+- B9 PASS
+- B10 PASS
+
+**Phase 4B overall: GPU/UI PASS / COMPLETE.**
