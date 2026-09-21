@@ -11,7 +11,7 @@ import logging
 from pathlib import Path
 import uuid
 
-UI_BUILD = "1.7.5"
+UI_BUILD = "1.7.6"
 PROTOCOL = 1
 BUILD_HEADER = "X-H3-Draft-UI"
 SESSION_HEADER = "X-H3-Draft-Session"
