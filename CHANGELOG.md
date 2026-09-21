@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.6 - 2026-09-21
+
+- Fix Phase 4B B10 browser-reload approval reset.
+- Treat reviewed Draft state as page-local provenance: only Preview/GO state created in the currently evaluated browser page, or explicitly restored within that same page, can participate in lifecycle persistence.
+- Ignore startup/historical Draft `ready` and Continue `complete` reports when they are not associated with a current-page execution.
+- Keep B2/B7 open-tab restoration working by re-marking restored runtime as owned by the current page.
+- Keep B3 stale-signature detection, sampling math, SIGMAS, conditioning, Reference handling and backend state unchanged.
+- Add host regression tests for historical report rejection and a simulated full-page reload boundary.
+- B4/B5/B8/B9 are user-confirmed PASS; B10 requires one real-browser retest on v1.7.6.
+- Phase 4B remains PARTIAL until B10 passes.
+
 ## 1.7.4 - 2026-09-21
 
 - Add a backward-compatible lifecycle bridge for ComfyUI Frontend 1.52.7.
