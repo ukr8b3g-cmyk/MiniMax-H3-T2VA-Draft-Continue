@@ -62,7 +62,7 @@ test("missing actual lifecycle bridge does not pass on a diagnostic string alone
   assert.equal(f.requests.length,0);
 });
 test("server build mismatch locks old page",async()=>{
-  const f=fixture();f.setManifest({protocol:1,ui_build:"1.7.6",server_session:"a".repeat(32),assets_available:true});
+  const f=fixture();f.setManifest({protocol:1,ui_build:"0.0.0",server_session:"a".repeat(32),assets_available:true});
   await assert.rejects(f.api.fetchApi("/prompt",{method:"POST",body}),/do not match/);
   assert.equal(f.requests.filter(x=>x.route==="/prompt").length,0);
 });
