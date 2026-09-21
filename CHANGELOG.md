@@ -8,8 +8,9 @@
 - Keep B2/B7 open-tab restoration working by re-marking restored runtime as owned by the current page.
 - Keep B3 stale-signature detection, sampling math, SIGMAS, conditioning, Reference handling and backend state unchanged.
 - Add host regression tests for historical report rejection and a simulated full-page reload boundary.
-- B4/B5/B8/B9 are user-confirmed PASS; B10 requires one real-browser retest on v1.7.6.
-- Phase 4B remains PARTIAL until B10 passes.
+- B4/B5/B8/B9 are user-confirmed PASS.
+- B10 real-browser retest PASS on Frontend 1.52.7 / UI 1.7.6: after Preview reached `READY · 3/6`, Ctrl+F5 returned to `PREVIEW REQUIRED / WAITING FOR PREVIEW` with GO disabled and Queue 0; no stale READY/COMPLETE was restored.
+- Phase 4B B0–B10 is user-confirmed PASS / COMPLETE.
 
 ## 1.7.4 - 2026-09-21
 
