@@ -1,8 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.5";
-import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.5";
-import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.5";
+import * as H3Logic from "./logic.mjs?v=1.7.6";
+import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.6";
+import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.6";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -77,6 +77,8 @@ const isDraft=node=>DRAFT_CLASSES.has(node?.comfyClass??node?.type);
 const isContinue=node=>CONTINUE_CLASSES.has(node?.comfyClass??node?.type);
 const pending=new Map();
 const workflowRuntime=new WeakMap();
+// Unique to this evaluated browser page. Never persisted or shared across reloads.
+const PAGE_SESSION=Object.freeze({});
 let frontendGuard=null;
 let staleCheckTimer=null;
 let staleCheckRunning=false;
@@ -87,6 +89,10 @@ function errorText(error){
 }
 
 function draftRuntime(node){
+  // Only state created or explicitly restored inside this evaluated page may
+  // participate in open-tab lifecycle persistence. Historical node outputs
+  // replayed during browser startup must not recreate approval after reload.
+  if(node?._h3SessionOwner!==PAGE_SESSION)return null;
   return copyReviewRuntime({
     phase:node?._h3Phase,
     ready:node?._h3Ready,
@@ -131,6 +137,7 @@ function restoreRuntime(tracker=activeWorkflowTracker()){
   for(const [id,runtime] of Object.entries(snapshots)){
     const node=app.rootGraph?.getNodeById?.(isNaN(+id)?id:+id)??app.rootGraph?.getNodeById?.(id);
     if(!isDraft(node)||!runtime)continue;
+    node._h3SessionOwner=PAGE_SESSION;
     node._h3Phase=runtime.phase;
     node._h3Ready=runtime.ready;
     node._h3Message=runtime.message;
@@ -219,7 +226,7 @@ function applyPanel(node,role,ui){
       continue:{title:"UI CHECK REQUIRED",detail:frontendGuard?.state.message??"Checking loaded frontend…"}};
   }
   const badge=node._h3Panel.querySelector(".h3-ui-build");
-  if(badge)badge.textContent=verified?"UI 1.7.5 · VERIFIED":"UI 1.7.5 · NOT VERIFIED";
+  if(badge)badge.textContent=verified?"UI 1.7.6 · VERIFIED":"UI 1.7.6 · NOT VERIFIED";
   const block=role==="draft"?ui.draft:ui.continue;
   node._h3Panel.dataset.kind=ui.kind;
   node._h3Panel.querySelector("strong").textContent=block.title;
@@ -346,6 +353,7 @@ async function queue(node,action){
         Object.assign(p,fresh);
       }
       output=branch(p.output,[id]);
+      node._h3SessionOwner=PAGE_SESSION;
       node._h3ApprovedStateId=null;
       setDraftPhase(node,"preview_queued",{clearReady:true,message:"",wall:null});
     }else{
@@ -355,15 +363,17 @@ async function queue(node,action){
         throw new Error("Connect the matching Draft node directly to draft_state. Place the review pair outside subgraphs; upstream subgraphs may be expanded by Core.");
       draft=app.graph.getNodeById(link[0]);
       const ready=draft?._h3Ready;
-      if(!ready?.state_id||draft._h3Pending){
+      if(!ready?.state_id||draft._h3Pending||draft?._h3SessionOwner!==PAGE_SESSION){
         if(draft)setDraftPhase(draft,"preview_required",{clearReady:true});
-        throw new Error("Wait for a Preview and review it before pressing GO.");
+        throw new Error("Wait for a Preview generated in this browser page and review it before pressing GO.");
       }
       if(await signature(p.output,link[0])!==ready.graph_hash){
         setDraftPhase(draft,"stale",{clearReady:true,message:"Settings changed after Preview."});
         throw new Error("Draft settings or model/LoRA changed. Preview again; the old image is not approval of the new settings.");
       }
       output=continueRequest(p.output,id,ready.state_id,outputTypes);
+      draft._h3SessionOwner=PAGE_SESSION;
+      node._h3SessionOwner=PAGE_SESSION;
       draft._h3ApprovedStateId=ready.state_id;
       setDraftPhase(draft,"continue_queued",{message:""});
     }
@@ -392,7 +402,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.5",
+      version: "1.7.6",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -486,6 +496,7 @@ app.registerExtension({
       const result=oldCreate?.apply(this,arguments);
       this._h3Ready=null;
       this._h3Pending=false;
+      this._h3SessionOwner=null;
       this._h3Phase="preview_required";
       this._h3Message="";
       this._h3PreviewWall=null;
@@ -507,9 +518,15 @@ app.registerExtension({
       oldExecuted?.apply(this,arguments);
       const report=message?.h3_draft?.[0];
       if(!report)return;
+      const wasPending=this._h3Pending===true;
       this._h3Pending=false;
 
       if(report.status==="ready"){
+        if(!wasPending&&this._h3SessionOwner!==PAGE_SESSION){
+          console.info("[H3 Draft Continue] Ignored non-session Draft ready report after page load.");
+          return;
+        }
+        this._h3SessionOwner=PAGE_SESSION;
         const state=report.state;
         const incomingId=state?.state_id??"";
         if(!acceptDraftReadyReport(this._h3Phase,incomingId,this._h3ApprovedStateId??"")){
@@ -527,6 +544,12 @@ app.registerExtension({
 
       if(report.status==="complete"){
         const linked=directDraftForContinue(this);
+        if(!wasPending&&linked?._h3SessionOwner!==PAGE_SESSION){
+          console.info("[H3 Draft Continue] Ignored non-session Continue complete report after page load.");
+          return;
+        }
+        this._h3SessionOwner=PAGE_SESSION;
+        if(linked)linked._h3SessionOwner=PAGE_SESSION;
         const samplerMode=report.operation==="sampler_continue";
         const count=report.sampling_transitions??report.denoiser_evaluations;
         const detail=`${count} resumed steps · ${report.total_wall_s.toFixed(1)}s · ${samplerMode?"Standard LATENT ready":"VIDEO ready"}`;
@@ -548,6 +571,7 @@ app.registerExtension({
       const result=oldConfigure?.apply(this,arguments);
       this._h3Ready=null;
       this._h3Pending=false;
+      this._h3SessionOwner=null;
       this._h3Phase="preview_required";
       this._h3Message="";
       this._h3PreviewWall=null;
