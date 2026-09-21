@@ -61,8 +61,10 @@ async function host() {
   await context.__H3_DRAFT_CONTINUE_UI__.checkFrontend();
   return {app,api,context,graph,wfA,wfB,extension};
 }
-function ready(h) {
-  h.graph.getNodeById(15).onExecuted({h3_draft:[{status:'ready',total_wall_s:1,
+function ready(h,{pending=true}={}) {
+  const draft=h.graph.getNodeById(15);
+  if(pending)draft._h3Pending=true;
+  draft.onExecuted({h3_draft:[{status:'ready',total_wall_s:1,
     state:{state_id:'b'.repeat(32),graph_hash:'test',current_step:3,settings:{total_steps:6,width:512,height:768,frame_count:124}}}]});
 }
 
@@ -83,6 +85,7 @@ test('actual extension READY round-trip via loadGraphData without modern hooks',
 });
 test('actual extension COMPLETE round-trip remains terminal and close/reopen resets',async()=>{
   const h=await host();ready(h);
+  h.graph.getNodeById(20)._h3Pending=true;
   h.graph.getNodeById(20).onExecuted({h3_draft:[{status:'complete',operation:'sampler_continue',sampling_transitions:3,total_wall_s:2}]});
   await h.app.loadGraphData({},true,true,h.wfB);
   await h.app.loadGraphData({},true,true,h.wfA);
@@ -93,4 +96,27 @@ test('actual extension COMPLETE round-trip remains terminal and close/reopen res
   await h.app.loadGraphData({},true,true,h.wfA);
   assert.equal(h.graph.getNodeById(15)._h3Phase,'preview_required');
   assert.equal(h.graph.getNodeById(20)._h3Buttons.go.disabled,true);
+});
+
+
+test('page boot ignores historical READY/COMPLETE reports without current-session execution',async()=>{
+  const h=await host();
+  ready(h,{pending:false});
+  assert.equal(h.graph.getNodeById(15)._h3Phase,'preview_required');
+  assert.equal(h.graph.getNodeById(20)._h3Buttons.go.disabled,true);
+  h.graph.getNodeById(20).onExecuted({h3_draft:[{status:'complete',operation:'sampler_continue',sampling_transitions:3,total_wall_s:2}]});
+  assert.equal(h.graph.getNodeById(15)._h3Phase,'preview_required');
+  assert.equal(h.graph.getNodeById(20)._h3Buttons.go.disabled,true);
+});
+
+test('simulated full page reload starts PREVIEW REQUIRED even if prior page was READY',async()=>{
+  const oldPage=await host();
+  ready(oldPage);
+  assert.equal(oldPage.graph.getNodeById(15)._h3Phase,'ready');
+
+  // A new host/context models a new evaluated document: no WeakMap/session owner survives.
+  const reloaded=await host();
+  ready(reloaded,{pending:false}); // historical output replay during startup
+  assert.equal(reloaded.graph.getNodeById(15)._h3Phase,'preview_required');
+  assert.equal(reloaded.graph.getNodeById(20)._h3Buttons.go.disabled,true);
 });
