@@ -1,8 +1,8 @@
-# MiniMax H3 Draft Continue — v1.7.4
+# MiniMax H3 Draft Continue — v1.7.6
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
 
-## v1.7.4 — Phase 4B Lifecycle / Stale-State Management
+## v1.7.6 — Phase 4B Lifecycle / Stale-State Management
 
 Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った場合**に、レビュー済みUI状態をブラウザーセッション内だけで保持します。v1.7.1ではComfyUIのgraph clone/clean順序に合わせ、`beforeLoadGraph`で旧Stateを捕捉し、`afterLoadGraph`でWorkflowタブpath単位に復元する方式へ修正しました。
 
@@ -10,7 +10,7 @@ Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った�
 
 また、Draftが`READY`の間はComfyUIの`graphChanged`を監視し、上流graph signatureを再確認します。Prompt、Layout、Reference、Sampler入力など実行内容に関わる変更を検出すると、GOを押す前に`PREVIEW STALE / NEW PREVIEW REQUIRED`へ移行してGOを無効化します。GO直前のsignature再確認も残します。
 
-Phase 4BはPARTIALのままですが、ComfyUI Frontend 1.52.7上のv1.7.4再テストでB2/B3/B7はPASSしました。READYとCOMPLETEは開いたままのWorkflowタブ往復で保持され、上流変更時は即座にSTALEへ移行します。B4/B5/B8/B9/B10は未実施です。
+Phase 4BはPARTIALですが、B0〜B9はPASSし、残りはB10のみです。v1.7.6ではページ固有の承認所有トークンを導入し、Ctrl+F5/完全再読込後に旧READY/COMPLETEを再利用しないようにしました。通常のWorkflowタブ往復ではB2/B7の状態保持を維持します。
 
 ## v1.6.0 — Phase 4A Preview / GO State UX
 
