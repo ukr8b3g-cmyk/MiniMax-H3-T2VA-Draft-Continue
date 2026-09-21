@@ -634,3 +634,28 @@ Current Phase 4B matrix:
 - B4/B5/B8/B9/B10 not yet run
 
 Phase 4B overall remains **PARTIAL** until the remaining B4/B5/B8/B9/B10 cases are completed.
+
+
+### Phase 4B B4/B5/B8/B9/B10 real-browser result
+
+Frontend 1.52.7 / UI build 1.7.5:
+
+- B4 PASS
+- B5 PASS
+- B8 PASS
+- B9 PASS
+- B10 FAIL — after Ctrl+F5 the UI still showed `READY · 3/6` with GO enabled instead of `PREVIEW REQUIRED`
+
+B10 was not a GPU/sampling failure. Queue was empty, UI build verification reported 1.7.5 VERIFIED, and the lifecycle wrapper was active.
+
+The saved test workflow does not contain an approval: Draft status is empty and Continue persists `go=false` with an empty approval ID. The failure is therefore a browser-runtime lifecycle boundary, not workflow-file persistence.
+
+v1.7.6 fix:
+
+- stable lifecycle state must be owned by the currently evaluated browser page
+- startup/historical `ready/complete` reports cannot recreate approval without a current-page execution
+- open-tab restore rebinds the cached state to the current page token
+- B2/B7 semantics are preserved
+- B10 requires targeted real-browser retest
+
+Current Phase 4B status: **PARTIAL — B10 only pending**.
