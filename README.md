@@ -4,7 +4,7 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
-## v1.7.4 — Lifecycle / Stale-State Management (Phase 4B)
+## v1.7.6 — Lifecycle / Stale-State Management (Phase 4B)
 
 Phase 4B keeps reviewed UI state across normal switches between already-open Workflow tabs, without serializing approval into the workflow file.
 
@@ -12,7 +12,7 @@ Stable session phases (`READY`, `STALE`, `COMPLETE`) are cached only in browser 
 
 While a Draft is `READY`, ComfyUI's `graphChanged` event now triggers a debounced upstream signature re-check. Execution-relevant edits immediately move the UI to `PREVIEW STALE / NEW PREVIEW REQUIRED`; the existing GO-time signature check remains the final guard.
 
-Phase 4B remains PARTIAL, but the v1.7.4 browser retest on ComfyUI Frontend 1.52.7 now has B2/B3/B7 PASS. READY and COMPLETE survive open-tab round-trips, and live upstream edits invalidate READY to STALE. B4/B5/B8/B9/B10 remain pending.
+Phase 4B remains PARTIAL with only B10 pending. B0–B9 are PASS. v1.7.6 adds a page-local approval provenance boundary so Ctrl+F5/full reload cannot reuse READY/COMPLETE from the previous page, while normal open-tab B2/B7 restore remains supported.
 
 ## v1.6.0 — Preview / GO State UX (Phase 4A)
 
