@@ -10,7 +10,7 @@ Phase 4Bでは、**開いたままのWorkflowタブを切り替えて戻った�
 
 また、Draftが`READY`の間はComfyUIの`graphChanged`を監視し、上流graph signatureを再確認します。Prompt、Layout、Reference、Sampler入力など実行内容に関わる変更を検出すると、GOを押す前に`PREVIEW STALE / NEW PREVIEW REQUIRED`へ移行してGOを無効化します。GO直前のsignature再確認も残します。
 
-Phase 4BはPARTIALですが、B0〜B9はPASSし、残りはB10のみです。v1.7.6ではページ固有の承認所有トークンを導入し、Ctrl+F5/完全再読込後に旧READY/COMPLETEを再利用しないようにしました。通常のWorkflowタブ往復ではB2/B7の状態保持を維持します。
+**Phase 4BはB0〜B10すべてGPU/UI PASS / COMPLETEです。** v1.7.6ではページ固有の承認所有トークンを導入し、Ctrl+F5/完全再読込後に旧READY/COMPLETEを再利用しない一方、通常のWorkflowタブ往復ではB2/B7の状態保持を維持します。
 
 ## v1.6.0 — Phase 4A Preview / GO State UX
 
