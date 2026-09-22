@@ -16,6 +16,10 @@ Use this clean, grouped workflow as the tutorial template: set START/END boxes, 
 
 **Runtime / UI build: 1.7.10.** Continue reaches `COMPLETE` only after the queued output chain succeeds. Phase 4C C0–C8 and C10 are user-confirmed PASS; **C9 memory endurance was skipped at the user's request and C11 remains unverified**. [Qualification status](docs/PHASE4C_STATUS.md)
 
+**Two-reference I2VA example:** [Download the cyberpunk workflow + both reference images](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip) · [JSON only](examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [Reference setup and recorded result](docs/VIDEO_TUTORIALS.md#two-reference-i2va--cyberpunk)
+
+The courier and rover references connect to Canvas slots A/B. This example completed Preview → GO → Decode/Save on the real GPU backend. Its English tutorial is being edited; the workflow and reference images are available now.
+
 ## v1.7.6 — Lifecycle / Stale-State Management (Phase 4B)
 
 Phase 4B keeps reviewed UI state across normal switches between already-open Workflow tabs, without serializing approval into the workflow file.

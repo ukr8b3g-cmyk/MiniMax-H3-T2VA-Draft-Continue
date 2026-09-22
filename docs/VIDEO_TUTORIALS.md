@@ -43,6 +43,26 @@ Model weights are not included. Choose valid local filenames and follow their re
 
 The real T2VA recording completed Preview → GO → Decode/Save with an empty queue afterward. The subsequent distribution copy enlarged the editor and changed presentation only. This demonstration is not a five-cycle memory endurance test; [C9 was explicitly skipped](PHASE4C_STATUS.md).
 
-## Two-reference I2VA tutorial
+## Two-reference I2VA — Cyberpunk
 
-A separate cyberpunk example with two supplied reference images is in preparation. Its workflow, assets and video link will be added after the corresponding checks; the T2VA download above remains a text-only template.
+[Download the workflow and both images (ZIP)](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip) · [Workflow JSON](../examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [Courier reference](../examples/assets/cyberpunk/h3-cyberpunk-courier.png) · [Rover reference](../examples/assets/cyberpunk/h3-cyberpunk-rover.png)
+
+![Actual two-reference cyberpunk output](assets/h3-i2va-preview.jpg)
+
+This clean example has 23 nodes in six groups. The supplied AI-generated reference images define the silver-haired courier and the small amber-lit delivery rover. They are **subject references, not the first and last video frames**. The English video tutorial is being edited; this workflow and its images are already available.
+
+1. Extract the ZIP and open `H3-I2VA-BBOX-Cyberpunk-v1.json` in ComfyUI. Choose the model files installed locally.
+2. Load `h3-cyberpunk-courier.png` in **A / Silver-haired Courier** and `h3-cyberpunk-rover.png` in **B / Amber Service Rover**.
+3. Keep the Load Image outputs connected to the Canvas A/B reference inputs. The Canvas `layout` output goes to the Structured Prompter, Layout Audit, and **H3 Structured Reference to Video** conditioner. Use a version of [H3 Structured Canvas](https://github.com/ukr8b3g-cmyk/H3-Structured-Canvas) that supplies these nodes and its START/END timeline.
+4. Set START/END boxes and match the scene/slot descriptions. The example moves the rover slightly left while the courier turns toward it.
+5. Confirm **UI 1.7.10 · VERIFIED**, click **Preview**, inspect **READY · 3/6**, then **GO**. Review the final video after Decode/Save and COMPLETE.
+
+The model/LoRA/encoder/VAE and seed match the T2VA table above. This version uses **768 × 512, 124 frames, 24 fps**, six Euler/simple steps, with Preview at three. The JSON has GO false and no saved Approval; recipients must generate a fresh Preview. Model weights are not included.
+
+### Recorded check, 2026-09-22
+
+Preview completed successfully and the UI reached READY 3/6. GO reused the cached upstream nodes and Draft, resumed three sampling steps, and completed the connected Decode/Save chain. The saved output is approximately 5.17 seconds. The courier and rover remain identifiable and separate while the rover approaches the courier. Layout is guidance, not a promise of exact pixel positions.
+
+Recorded environment: ComfyUI 0.37.0, Frontend 1.52.7, Draft/Continue runtime and UI 1.7.10, RTX 5060 Ti 16 GB. The workflow-only OBS recording is 2560 × 1440 at 30 fps; this tutorial resolution is separate from the generated example's 768 × 512 resolution.
+
+This is one demonstration cycle, not C9 memory endurance. C9 remains skipped and C11 remains unverified.
