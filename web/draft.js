@@ -558,7 +558,6 @@ app.registerExtension({
         }
       });
     }
-    }
   },
 
   async beforeRegisterNodeDef(nodeType,nodeData){
