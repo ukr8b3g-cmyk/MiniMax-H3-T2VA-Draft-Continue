@@ -4,6 +4,18 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## Watch the tutorial · Download the template
+
+[![BBOX Layout, Preview and Continue — English video tutorial](docs/assets/h3-bbox-tutorial.jpg)](https://youtu.be/4cMJKsY5B_o)
+
+**[Watch on YouTube: BBOX Layout, Preview & Continue](https://youtu.be/4cMJKsY5B_o)** — a 94-second walkthrough with English narration and captions.
+
+**[Download the T2VA Neon workflow](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-BBOX-Draft-Continue-Neon-v1.json)** · [Setup and model settings](docs/VIDEO_TUTORIALS.md)
+
+Use this clean, grouped workflow as the tutorial template: set START/END boxes, generate a 3-step Preview, review the first-frame estimate, then GO to finish the remaining 3 steps of the same generation. The distributed version has a larger BBOX editor than the recorded take. It uses text only; no reference images are needed.
+
+**Runtime / UI build: 1.7.10.** Continue reaches `COMPLETE` only after the queued output chain succeeds. Phase 4C C0–C8 and C10 are user-confirmed PASS; **C9 memory endurance was skipped at the user's request and C11 remains unverified**. [Qualification status](docs/PHASE4C_STATUS.md)
+
 ## v1.7.6 — Lifecycle / Stale-State Management (Phase 4B)
 
 Phase 4B keeps reviewed UI state across normal switches between already-open Workflow tabs, without serializing approval into the workflow file.

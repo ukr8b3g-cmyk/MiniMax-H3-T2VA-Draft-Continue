@@ -1,6 +1,18 @@
-# MiniMax H3 Draft Continue — v1.7.6
+# MiniMax H3 Draft Continue — v1.7.10
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
+
+## 解説動画と配布用テンプレート
+
+[![BBOX Layout・Preview・Continue 英語解説動画](docs/assets/h3-bbox-tutorial.jpg)](https://youtu.be/4cMJKsY5B_o)
+
+**[YouTubeで操作を見る：BBOX Layout, Preview & Continue](https://youtu.be/4cMJKsY5B_o)** — 英語音声・字幕付き、約94秒。
+
+**[T2VA Neon Workflowをダウンロード](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-BBOX-Draft-Continue-Neon-v1.json)** · [導入・モデル設定](docs/VIDEO_TUTORIALS.md)
+
+説明用に整理したテンプレートです。START/ENDのBBOXを指定し、3ステップのPreviewで最初のフレームの中間予測を確認してから、GOで同じ生成の残り3ステップへ進みます。配布版は録画時よりBBOX編集欄を大きくしています。テキストのみで使用でき、参照画像は不要です。
+
+**Runtime / UI Build: 1.7.10。** Continueはキューに入れた出力処理全体の成功後に`COMPLETE`へ移ります。Phase 4CのC0〜C8・C10はユーザー確認済みPASSです。**C9メモリ耐久試験はユーザー判断で省略、C11は未確認です。** [検証状況](docs/PHASE4C_STATUS.md)
 
 ## v1.7.6 — Phase 4B Lifecycle / Stale-State Management
 
