@@ -45,11 +45,13 @@ The real T2VA recording completed Preview → GO → Decode/Save with an empty q
 
 ## Two-reference I2VA — Cyberpunk
 
+[Watch the English I2VA tutorial on YouTube](https://youtu.be/HopdznXTFjk) — approximately 1 minute 55 seconds, 1440p workflow-only recording, English stock female narration, captions and quiet original instrumental music. Rendering waits are accelerated and labeled; operations and review steps remain visible. An English narration subtitle track is included on YouTube.
+
 [Download the workflow and both images (ZIP)](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip) · [Workflow JSON](../examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [Courier reference](../examples/assets/cyberpunk/h3-cyberpunk-courier.png) · [Rover reference](../examples/assets/cyberpunk/h3-cyberpunk-rover.png)
 
 ![Actual two-reference cyberpunk output](assets/h3-i2va-preview.jpg)
 
-This clean example has 23 nodes in six groups. The supplied AI-generated reference images define the silver-haired courier and the small amber-lit delivery rover. They are **subject references, not the first and last video frames**. The English video tutorial is being edited; this workflow and its images are already available.
+This clean example has 23 nodes in six groups. The supplied AI-generated reference images define the silver-haired courier and the small amber-lit delivery rover. They are **subject references, not the first and last video frames**. The workflow and both images are included in the download above.
 
 1. Extract the ZIP and open `H3-I2VA-BBOX-Cyberpunk-v1.json` in ComfyUI. Choose the model files installed locally.
 2. Load `h3-cyberpunk-courier.png` in **A / Silver-haired Courier** and `h3-cyberpunk-rover.png` in **B / Amber Service Rover**.

@@ -14,9 +14,15 @@
 
 **Runtime / UI Build: 1.7.10。** Continueはキューに入れた出力処理全体の成功後に`COMPLETE`へ移ります。Phase 4CのC0〜C8・C10はユーザー確認済みPASSです。**C9メモリ耐久試験はユーザー判断で省略、C11は未確認です。** [検証状況](docs/PHASE4C_STATUS.md)
 
-**2画像のI2VA作例：** [Cyberpunk Workflow＋参照画像2枚をダウンロード](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip) · [JSONのみ](examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [接続方法と実機結果](docs/VIDEO_TUTORIALS.md#two-reference-i2va--cyberpunk)
+### 2画像のI2VA · Cyberpunk
 
-人物とローバーの参照画像をCanvasのA/Bへ接続します。実GPUでPreview → GO → Decode/Saveまで完了した作例です。英語解説動画は編集中で、Workflowと参照画像は先に配布しています。
+[![2画像のI2VA — Cyberpunk・BBOX・Preview・Continue](docs/assets/h3-i2va-preview.jpg)](https://youtu.be/HopdznXTFjk)
+
+**[YouTubeで2画像のI2VA操作を見る](https://youtu.be/HopdznXTFjk)** — 約1分55秒、英語女性音声・字幕・静かなオリジナルBGM付き。**2560 × 1440**で録画・書き出し、操作部分を拡大しています。生成待ちは短縮し、その旨を表示しています。
+
+**[Cyberpunk Workflow＋参照画像2枚をダウンロード](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip)** · [JSONのみ](examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [接続方法と実機結果](docs/VIDEO_TUTORIALS.md#two-reference-i2va--cyberpunk)
+
+人物とローバーの参照画像をCanvasのA/Bへ接続します。実GPUでPreview → GO → Decode/Saveまで完了した作例です。参照画像は被写体の指定であり、動画の最初と最後のフレームではありません。生成動画は768 × 512、解説画面は1440pです。
 
 ## v1.7.6 — Phase 4B Lifecycle / Stale-State Management
 

@@ -16,9 +16,15 @@ Use this clean, grouped workflow as the tutorial template: set START/END boxes, 
 
 **Runtime / UI build: 1.7.10.** Continue reaches `COMPLETE` only after the queued output chain succeeds. Phase 4C C0–C8 and C10 are user-confirmed PASS; **C9 memory endurance was skipped at the user's request and C11 remains unverified**. [Qualification status](docs/PHASE4C_STATUS.md)
 
-**Two-reference I2VA example:** [Download the cyberpunk workflow + both reference images](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip) · [JSON only](examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [Reference setup and recorded result](docs/VIDEO_TUTORIALS.md#two-reference-i2va--cyberpunk)
+### Two-image I2VA · Cyberpunk
 
-The courier and rover references connect to Canvas slots A/B. This example completed Preview → GO → Decode/Save on the real GPU backend. Its English tutorial is being edited; the workflow and reference images are available now.
+[![Two-image I2VA — Cyberpunk, BBOX, Preview and Continue](docs/assets/h3-i2va-preview.jpg)](https://youtu.be/HopdznXTFjk)
+
+**[Watch the two-image I2VA tutorial](https://youtu.be/HopdznXTFjk)** — about 1 minute 55 seconds, with English female narration, captions and quiet original music. Recorded and exported at **2560 × 1440**, with enlarged controls and shortened, labeled generation waits.
+
+**[Download the cyberpunk workflow + both reference images](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-I2VA-BBOX-Cyberpunk-v1.zip)** · [JSON only](examples/H3-I2VA-BBOX-Cyberpunk-v1.json) · [Reference setup and recorded result](docs/VIDEO_TUTORIALS.md#two-reference-i2va--cyberpunk)
+
+The courier and rover references connect to Canvas slots A/B. This example completed Preview → GO → Decode/Save on the real GPU backend. The references define subjects, not the first and last video frames. The generated example is 768 × 512; the tutorial's 1440p resolution is for the workflow UI.
 
 ## v1.7.6 — Lifecycle / Stale-State Management (Phase 4B)
 
