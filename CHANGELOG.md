@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.7.10 - 2026-09-22
+
+- Close Phase 4C C0–C11 as GPU/UI PASS / COMPLETE on ComfyUI 0.37.0, Frontend 1.52.7, and RTX 5060 Ti 16 GB.
+- Invalidate reviewed approval when the Draft/Continue connection changes, including disconnect/reconnect to the same Draft, and clear the open-tab snapshot so stale READY cannot return.
+- Verify backend Draft-state ownership against the currently connected Draft node and output slot before Continue sampling.
+- Clear `_h3Ready` and `_h3ApprovedStateId` after execution error or interruption so an errored State cannot be reused.
+- Keep Continue pending through downstream Decode/Save and enter COMPLETE only after prompt-wide `execution_success`; downstream failure enters REVIEW ERROR without transient COMPLETE.
+- Confirm browser reload and backend-session boundaries reject old approval and require a fresh Preview.
+- Pass C9 five-cycle GPU endurance: five distinct State IDs, five successful Decode/Save outputs, Queue 0/0 after every cycle, no OOM/NaN/crash/error, and no significant cumulative VRAM growth or leak trend (+109 MiB settled VRAM from run 1 to run 5).
+- Pass C11 production regression: normal completion, interrupt recovery, duplicate-Queue prevention, recovery Preview, and Reference + Structured BBOX + Multi-Key output inspection.
+- Keep sampling math, Euler/simple, SIGMAS, noise, Reference, BBOX, Multi-Key, and Decode/Save data paths unchanged.
+
 ## 1.7.6 - 2026-09-21
 
 - Fix Phase 4B B10 browser-reload approval reset.

@@ -12,7 +12,7 @@
 
 説明用に整理したテンプレートです。START/ENDのBBOXを指定し、3ステップのPreviewで最初のフレームの中間予測を確認してから、GOで同じ生成の残り3ステップへ進みます。配布版は録画時よりBBOX編集欄を大きくしています。テキストのみで使用でき、参照画像は不要です。
 
-**Runtime / UI Build: 1.7.10。** Continueはキューに入れた出力処理全体の成功後に`COMPLETE`へ移ります。Phase 4CのC0〜C8・C10はユーザー確認済みPASSです。**C9メモリ耐久試験はユーザー判断で省略、C11は未確認です。** [検証状況](docs/PHASE4C_STATUS.md)
+**Runtime / UI Build: 1.7.10。** Continueはキューに入れた出力処理全体の成功後に`COMPLETE`へ移ります。**Phase 4CのC0〜C11は実GPU/UIでPASS / COMPLETEです。** 5サイクルのC9耐久試験では有意な累積VRAM増加・リーク傾向はなく、最終C11 Production回帰もPASSしました。[検証状況](docs/PHASE4C_STATUS.md)・[C9実測記録](docs/C9_GPU_ENDURANCE.md)
 
 ### 2画像のI2VA · Cyberpunk
 

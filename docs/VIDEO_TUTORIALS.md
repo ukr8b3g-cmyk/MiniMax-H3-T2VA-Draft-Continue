@@ -41,7 +41,7 @@ Model weights are not included. Choose valid local filenames and follow their re
 - Generation waits are accelerated and labeled in the tutorial. UI actions remain visible.
 - The tutorial uses English synthetic female narration and original instrumental background music. The example output is AI-generated.
 
-The real T2VA recording completed Preview → GO → Decode/Save with an empty queue afterward. The subsequent distribution copy enlarged the editor and changed presentation only. This demonstration is not a five-cycle memory endurance test; [C9 was explicitly skipped](PHASE4C_STATUS.md).
+The real T2VA recording completed Preview → GO → Decode/Save with an empty queue afterward. The subsequent distribution copy enlarged the editor and changed presentation only. This single demonstration is not the endurance gate by itself; a separate five-cycle C9 run later passed. [Phase 4C qualification](PHASE4C_STATUS.md)
 
 ## Two-reference I2VA — Cyberpunk
 
@@ -67,4 +67,4 @@ Preview completed successfully and the UI reached READY 3/6. GO reused the cache
 
 Recorded environment: ComfyUI 0.37.0, Frontend 1.52.7, Draft/Continue runtime and UI 1.7.10, RTX 5060 Ti 16 GB. The workflow-only OBS recording is 2560 × 1440 at 30 fps; this tutorial resolution is separate from the generated example's 768 × 512 resolution.
 
-This is one demonstration cycle, not C9 memory endurance. C9 remains skipped and C11 remains unverified.
+This is one demonstration cycle, not the C9 endurance gate by itself. The separate five-cycle C9 run and final C11 production regression are PASS, closing Phase 4C. [Qualification record](PHASE4C_STATUS.md)

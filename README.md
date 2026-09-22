@@ -14,7 +14,7 @@
 
 Use this clean, grouped workflow as the tutorial template: set START/END boxes, generate a 3-step Preview, review the first-frame estimate, then GO to finish the remaining 3 steps of the same generation. The distributed version has a larger BBOX editor than the recorded take. It uses text only; no reference images are needed.
 
-**Runtime / UI build: 1.7.10.** Continue reaches `COMPLETE` only after the queued output chain succeeds. Phase 4C C0–C8 and C10 are user-confirmed PASS; **C9 memory endurance was skipped at the user's request and C11 remains unverified**. [Qualification status](docs/PHASE4C_STATUS.md)
+**Runtime / UI build: 1.7.10.** Continue reaches `COMPLETE` only after the queued output chain succeeds. **Phase 4C C0–C11 is GPU/UI PASS / COMPLETE.** The five-cycle C9 endurance gate found no significant cumulative VRAM growth or leak trend, and the final C11 production regression passed. [Qualification status](docs/PHASE4C_STATUS.md) · [C9 evidence](docs/C9_GPU_ENDURANCE.md)
 
 ### Two-image I2VA · Cyberpunk
 
