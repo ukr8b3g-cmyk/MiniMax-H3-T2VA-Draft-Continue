@@ -7,7 +7,7 @@ import time
 import torch
 from . import VERSION
 from .backend import CoreBackend
-from .contracts import DraftError, Settings, graph_signature
+from .contracts import DraftError, Settings, graph_signature, verify_continue_source
 from .state import DraftState, clone_cpu, validate_av, validate_sigmas
 
 
@@ -78,9 +78,11 @@ class Engine:
         return DraftResult(state, report)
 
     @torch.inference_mode()
-    def continue_(self, state, approval, prompt=None):
+    def continue_(self, state, approval, prompt=None, continue_node_id=""):
         if not isinstance(state, DraftState):
             raise DraftError("Connect H3 T2VA Draft's draft_state output. A LATENT or image is not a Draft State.")
+        verify_continue_source(prompt, continue_node_id, state.source_node_id,
+                               "H3T2VAContinue", "H3T2VADraft")
         if not state._lock.acquire(blocking=False):
             raise DraftError("This draft is already being continued. Wait for the active job.")
         try:

@@ -116,3 +116,32 @@ def graph_branch(prompt: dict | None, root: str | int) -> dict:
 def graph_signature(prompt: dict | None, root: str | int) -> str:
     branch = graph_branch(prompt, root)
     return digest_json(branch) if branch else ""
+
+
+def verify_continue_source(prompt: dict | None, continue_node_id: str | int | None,
+                           source_node_id: str | int | None,
+                           expected_continue_class: str, expected_draft_class: str,
+                           draft_output_slot: int = 1) -> None:
+    """Bind a reviewed Draft State to the Continue node's current direct link."""
+    if continue_node_id in (None, ""):
+        return
+    continue_id = str(continue_node_id)
+    source_id = "" if source_node_id in (None, "") else str(source_node_id)
+    message = (
+        "Continue is not connected to the Draft that produced this State. "
+        "Generate a new Preview after reconnecting."
+    )
+    if not source_id or not isinstance(prompt, dict):
+        raise DraftError(message)
+    node = prompt.get(continue_id)
+    if not isinstance(node, dict) or node.get("class_type") != expected_continue_class:
+        raise DraftError(message)
+    inputs = node.get("inputs")
+    link = inputs.get("draft_state") if isinstance(inputs, dict) else None
+    if not (isinstance(link, (list, tuple)) and len(link) == 2 and
+            str(link[0]) == source_id and type(link[1]) is int and
+            link[1] == draft_output_slot):
+        raise DraftError(message)
+    draft = prompt.get(source_id)
+    if not isinstance(draft, dict) or draft.get("class_type") != expected_draft_class:
+        raise DraftError(message)

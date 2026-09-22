@@ -1,5 +1,5 @@
 /** Stale-page protection. No automatic reload, persistent storage or workflow edits. */
-export const UI_BUILD = "1.7.6";
+export const UI_BUILD = "1.7.10";
 const INSTALL = Symbol.for("MiniMax.H3.DraftContinue.frontendGuard");
 const BRIDGE = Symbol.for("MiniMax.H3.DraftContinue.loadGraphDataLifecycleBridge");
 const REVIEW = new Set(["H3T2VADraft", "H3T2VAContinue", "H3DraftSampler", "H3ContinueSampler"]);

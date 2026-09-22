@@ -1,8 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.6";
-import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.6";
-import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.6";
+import * as H3Logic from "./logic.mjs?v=1.7.10";
+import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.10";
+import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.10";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -124,9 +124,8 @@ function activeWorkflowTracker(){
 function rememberActiveRuntime(tracker=activeWorkflowTracker()){
   if(!tracker)return false;
   const snapshots=captureRuntime();
-  if(!Object.keys(snapshots).length)return false;
   workflowRuntime.set(tracker,snapshots);
-  return true;
+  return Object.keys(snapshots).length>0;
 }
 
 function restoreRuntime(tracker=activeWorkflowTracker()){
@@ -202,6 +201,74 @@ function linkedContinues(draft){
   return Array.from(nodes).filter(node=>isContinue(node)&&directDraftForContinue(node)===draft);
 }
 
+function graphNodeById(graph,id){
+  if(id==null||!graph)return null;
+  return graph.getNodeById?.(id)??graph.getNodeById?.(String(id))??null;
+}
+
+function resetContinueApproval(node){
+  if(!isContinue(node))return;
+  const go=widget(node,"go");
+  const approved=widget(node,"approved_state_id");
+  if(go)go.value=false;
+  if(approved)approved.value="";
+  node._h3SessionOwner=null;
+  standalonePhase(node,"preview_required");
+}
+
+function invalidateConnectionApproval(draft){
+  if(!isDraft(draft))return false;
+  const hadApproval=Boolean(
+    draft._h3Ready||draft._h3ApprovedStateId||
+    draft._h3Phase==="ready"||draft._h3Phase==="stale"||draft._h3Phase==="complete"
+  );
+  draft._h3ApprovedStateId=null;
+  if(hadApproval){
+    setDraftPhase(draft,"preview_required",{clearReady:true,message:""});
+  }else{
+    syncDraft(draft);
+    rememberActiveRuntime();
+  }
+  return hadApproval;
+}
+
+function handleContinueConnectionChange(node,connected,linkInfo){
+  if(!isContinue(node))return;
+  const graph=node?.graph??app.graph;
+  const previous=graphNodeById(graph,node._h3LinkedDraftId);
+  const eventDraft=graphNodeById(graph,linkInfo?.origin_id);
+
+  resetContinueApproval(node);
+  if(isDraft(previous))invalidateConnectionApproval(previous);
+  if(isDraft(eventDraft)&&eventDraft!==previous)invalidateConnectionApproval(eventDraft);
+
+  queueMicrotask(()=>{
+    if(app.configuringGraph)return;
+    const current=directDraftForContinue(node);
+    if(current&&current!==previous&&current!==eventDraft)invalidateConnectionApproval(current);
+    node._h3LinkedDraftId=current?String(current.id):null;
+    if(current)syncDraft(current);
+    else standalonePhase(node,"preview_required");
+  });
+}
+
+function handleDraftConnectionChange(draft,linkInfo){
+  if(!isDraft(draft))return;
+  invalidateConnectionApproval(draft);
+  const graph=draft?.graph??app.graph;
+  const target=graphNodeById(graph,linkInfo?.target_id);
+  if(isContinue(target)){
+    resetContinueApproval(target);
+    queueMicrotask(()=>{
+      if(app.configuringGraph)return;
+      const current=directDraftForContinue(target);
+      target._h3LinkedDraftId=current?String(current.id):null;
+      if(current)syncDraft(current);
+      else standalonePhase(target,"preview_required");
+    });
+  }
+}
+
 function reviewInput(draft){
   const ready=draft?._h3Ready;
   const settings=ready?.settings??{};
@@ -226,7 +293,7 @@ function applyPanel(node,role,ui){
       continue:{title:"UI CHECK REQUIRED",detail:frontendGuard?.state.message??"Checking loaded frontend…"}};
   }
   const badge=node._h3Panel.querySelector(".h3-ui-build");
-  if(badge)badge.textContent=verified?"UI 1.7.6 · VERIFIED":"UI 1.7.6 · NOT VERIFIED";
+  if(badge)badge.textContent=verified?"UI 1.7.10 · VERIFIED":"UI 1.7.10 · NOT VERIFIED";
   const block=role==="draft"?ui.draft:ui.continue;
   node._h3Panel.dataset.kind=ui.kind;
   node._h3Panel.querySelector("strong").textContent=block.title;
@@ -257,13 +324,17 @@ function syncDraft(draft){
   if(!isDraft(draft))return;
   const ui=reviewUiState(reviewInput(draft));
   applyPanel(draft,"draft",ui);
-  for(const node of linkedContinues(draft))applyPanel(node,"continue",ui);
+  for(const node of linkedContinues(draft)){
+    node._h3LinkedDraftId=String(draft.id);
+    applyPanel(node,"continue",ui);
+  }
 }
 
-function setDraftPhase(draft,phase,{ready,message,wall,clearReady=false}={}){
+function setDraftPhase(draft,phase,{ready,message,wall,clearReady=false,clearApproval=false}={}){
   if(!isDraft(draft))return;
   draft._h3Phase=phase;
   if(clearReady)draft._h3Ready=null;
+  if(clearApproval)draft._h3ApprovedStateId=null;
   if(ready!==undefined)draft._h3Ready=ready;
   if(message!==undefined)draft._h3Message=message;
   if(wall!==undefined)draft._h3PreviewWall=wall;
@@ -278,7 +349,7 @@ function standalonePhase(node,phase,message=""){
 
 function markError(node,message){
   const draft=isDraft(node)?node:directDraftForContinue(node);
-  if(draft)setDraftPhase(draft,"error",{clearReady:true,message});
+  if(draft)setDraftPhase(draft,"error",{clearReady:true,clearApproval:true,message});
   else standalonePhase(node,"error",message);
 }
 
@@ -374,6 +445,7 @@ async function queue(node,action){
       output=continueRequest(p.output,id,ready.state_id,outputTypes);
       draft._h3SessionOwner=PAGE_SESSION;
       node._h3SessionOwner=PAGE_SESSION;
+      node._h3ContinueCompletionMessage=null;
       draft._h3ApprovedStateId=ready.state_id;
       setDraftPhase(draft,"continue_queued",{message:""});
     }
@@ -402,7 +474,7 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.6",
+      version: "1.7.10",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
@@ -474,15 +546,18 @@ app.registerExtension({
         if(!item)return;
         pending.delete(id);
         item.node._h3Pending=false;
+        const completionMessage=item.node._h3ContinueCompletionMessage;
+        item.node._h3ContinueCompletionMessage=null;
         if(event==="execution_success"){
           if(isContinue(item.node)&&item.draft?._h3Phase==="continue_queued"){
-            setDraftPhase(item.draft,"complete",{message:"Continue completed successfully."});
+            setDraftPhase(item.draft,"complete",{message:completionMessage??"Continue completed successfully."});
           }
         }else{
           const message=e.detail?.exception_message??"The review run failed. Generate a new Preview.";
           markError(item.draft??item.node,message);
         }
       });
+    }
     }
   },
 
@@ -501,6 +576,8 @@ app.registerExtension({
       this._h3Message="";
       this._h3PreviewWall=null;
       this._h3ApprovedStateId=null;
+      this._h3LinkedDraftId=null;
+      this._h3ContinueCompletionMessage=null;
       buildPanel(this,draftRole);
       if(draftRole){
         this.color="#203c42";
@@ -513,15 +590,29 @@ app.registerExtension({
       return result;
     };
 
+    const oldConnections=nodeType.prototype.onConnectionsChange;
+    nodeType.prototype.onConnectionsChange=function(slotType,slot,connected,linkInfo,ioSlot){
+      const result=oldConnections?.apply(this,arguments);
+      if(app.configuringGraph)return result;
+      const slotName=draftRole
+        ?(this.outputs?.[slot]?.name??ioSlot?.name)
+        :(this.inputs?.[slot]?.name??ioSlot?.name);
+      if(slotName!=="draft_state")return result;
+      if(draftRole)handleDraftConnectionChange(this,linkInfo);
+      else handleContinueConnectionChange(this,connected,linkInfo);
+      scheduleReadyValidation();
+      return result;
+    };
+
     const oldExecuted=nodeType.prototype.onExecuted;
     nodeType.prototype.onExecuted=function(message){
       oldExecuted?.apply(this,arguments);
       const report=message?.h3_draft?.[0];
       if(!report)return;
       const wasPending=this._h3Pending===true;
-      this._h3Pending=false;
 
       if(report.status==="ready"){
+        this._h3Pending=false;
         if(!wasPending&&this._h3SessionOwner!==PAGE_SESSION){
           console.info("[H3 Draft Continue] Ignored non-session Draft ready report after page load.");
           return;
@@ -531,9 +622,7 @@ app.registerExtension({
         const incomingId=state?.state_id??"";
         if(!acceptDraftReadyReport(this._h3Phase,incomingId,this._h3ApprovedStateId??"")){
           console.info("[H3 Draft Continue] Ignored late Draft ready report", {
-            phase:this._h3Phase,
-            state_id:incomingId,
-            approved_state_id:this._h3ApprovedStateId??"",
+            phase:this._h3Phase,state_id:incomingId,approved_state_id:this._h3ApprovedStateId??"",
           });
           return;
         }
@@ -553,11 +642,19 @@ app.registerExtension({
         const samplerMode=report.operation==="sampler_continue";
         const count=report.sampling_transitions??report.denoiser_evaluations;
         const detail=`${count} resumed steps · ${report.total_wall_s.toFixed(1)}s · ${samplerMode?"Standard LATENT ready":"VIDEO ready"}`;
-        if(linked)setDraftPhase(linked,"complete",{message:detail});
-        else standalonePhase(this,"complete",detail);
+        if(linked){
+          if(wasPending&&linked._h3Phase==="continue_queued"){
+            this._h3ContinueCompletionMessage=detail;
+            syncDraft(linked);
+          }
+        }else{
+          this._h3Pending=false;
+          standalonePhase(this,"complete",detail);
+        }
         return;
       }
 
+      this._h3Pending=false;
       if(report.status==="awaiting_approval"){
         const linked=directDraftForContinue(this);
         if(linked?._h3Ready)syncDraft(linked);
@@ -576,6 +673,8 @@ app.registerExtension({
       this._h3Message="";
       this._h3PreviewWall=null;
       this._h3ApprovedStateId=null;
+      this._h3LinkedDraftId=null;
+      this._h3ContinueCompletionMessage=null;
 
       if(!draftRole){
         const go=widget(this,"go");
@@ -584,7 +683,15 @@ app.registerExtension({
         if(id)id.value="";
       }
       standalonePhase(this,"preview_required");
-      if(draftRole)queueMicrotask(()=>syncDraft(this));
+      queueMicrotask(()=>{
+        if(draftRole)syncDraft(this);
+        else{
+          const linked=directDraftForContinue(this);
+          this._h3LinkedDraftId=linked?String(linked.id):null;
+          if(linked)syncDraft(linked);
+          else standalonePhase(this,"preview_required");
+        }
+      });
       return result;
     };
   },

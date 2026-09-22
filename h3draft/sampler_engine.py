@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import time
 import torch
 from . import VERSION
-from .contracts import DraftError, graph_signature
+from .contracts import DraftError, graph_signature, verify_continue_source
 from .engine import Engine, DraftResult
 from .sampler_backend import CoreSamplerBackend
 from .sampler_state import SamplerDraftState, external_sigmas, freeze, native_geometry
@@ -76,9 +76,11 @@ class SamplerEngine(Engine):
         return DraftResult(state, report)
 
     @torch.inference_mode()
-    def continue_external(self, state, approval, prompt=None):
+    def continue_external(self, state, approval, prompt=None, continue_node_id=""):
         if not isinstance(state, SamplerDraftState):
             raise DraftError("Connect H3 Draft Sampler to H3 Continue Sampler; the legacy integrated Draft uses a different state type.")
+        verify_continue_source(prompt, continue_node_id, state.source_node_id,
+                               "H3ContinueSampler", "H3DraftSampler")
         if not state._lock.acquire(blocking=False):
             raise DraftError("This draft is already being continued. Wait for the active job.")
         try:

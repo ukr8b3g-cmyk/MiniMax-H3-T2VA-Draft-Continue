@@ -56,20 +56,20 @@ class H3T2VAContinue:
             "draft_state": ("H3_DRAFT_STATE", {"lazy": True}),
             "go": ("BOOLEAN", {"default": False, "label_on": "GO", "label_off": "Review first"}),
             "approved_state_id": ("STRING", {"default": "", "tooltip": "Filled by GO. For API use, copy state.state_id from the Draft report."}),
-        }, "hidden": {"prompt": "PROMPT"}}
+        }, "hidden": {"prompt": "PROMPT", "unique_id": "UNIQUE_ID"}}
 
     def check_lazy_status(self, go=False, approved_state_id="", draft_state=None, **kwargs):
         if go and approved_state_id and draft_state is None:
             return ["draft_state"]
         return []
 
-    def continue_video(self, go=False, approved_state_id="", draft_state=None, prompt=None):
+    def continue_video(self, go=False, approved_state_id="", draft_state=None, prompt=None, unique_id=""):
         if not go or not approved_state_id:
             from comfy_execution.graph import ExecutionBlocker
             report = {"status": "awaiting_approval", "operation": "continue", "new_noise": False}
             return {"ui": {"h3_draft": [report]},
                     "result": (ExecutionBlocker(None), ExecutionBlocker(None), json.dumps(report))}
-        result = Engine().continue_(draft_state, approved_state_id, prompt)
+        result = Engine().continue_(draft_state, approved_state_id, prompt, unique_id)
         return {"ui": {"h3_draft": [result.report]},
                 "result": (result.video, result.latent, json.dumps(result.report, ensure_ascii=False, indent=2))}
 

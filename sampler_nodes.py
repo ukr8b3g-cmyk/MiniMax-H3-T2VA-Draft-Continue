@@ -52,18 +52,18 @@ class H3ContinueSampler:
             "draft_state": ("H3_SAMPLER_DRAFT_STATE", {"lazy":True}),
             "go": ("BOOLEAN", {"default":False, "label_on":"GO", "label_off":"Review first"}),
             "approved_state_id": ("STRING", {"default":"", "tooltip":"Filled by GO after Preview. API clients use the reviewed state.state_id."}),
-        }, "hidden":{"prompt":"PROMPT"}}
+        }, "hidden":{"prompt":"PROMPT", "unique_id":"UNIQUE_ID"}}
 
     def check_lazy_status(self, go=False, approved_state_id="", draft_state=None, **kwargs):
         return ["draft_state"] if go and approved_state_id and draft_state is None else []
 
-    def continue_latent(self, go=False, approved_state_id="", draft_state=None, prompt=None):
+    def continue_latent(self, go=False, approved_state_id="", draft_state=None, prompt=None, unique_id=""):
         if not go or not approved_state_id:
             from comfy_execution.graph import ExecutionBlocker
             report = {"status":"awaiting_approval", "operation":"sampler_continue", "new_noise":False}
             return {"ui":{"h3_draft":[report]},
                     "result":(ExecutionBlocker(None), ExecutionBlocker(None), json.dumps(report))}
-        result = SamplerEngine().continue_external(draft_state, approved_state_id, prompt)
+        result = SamplerEngine().continue_external(draft_state, approved_state_id, prompt, unique_id)
         return {"ui":{"h3_draft":[result.report]},
                 "result":(result.latent, result.denoised, json.dumps(result.report, ensure_ascii=False, indent=2))}
 
