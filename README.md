@@ -4,6 +4,12 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## Basic workflow — no BBOX
+
+**[Download the no-BBOX workflow](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-Draft-Sampler-Turbo6.json)** — a normal ComfyUI workflow JSON. Preview the first-frame estimate, then click GO to continue through video/audio Decode and Save. No Structured Canvas or BBOX nodes are needed.
+
+Select your installed H3 model, text encoder, VAEs and compatible Turbo LoRA before running. Defaults: Euler/simple, 6 total steps, 3 preview steps, 24 fps, approximately 5 seconds. This addition was checked structurally; this exact template was not rerun on GPU.
+
 ## Watch the tutorial · Download the template
 
 [![BBOX Layout, Preview and Continue — English video tutorial](docs/assets/h3-bbox-tutorial.jpg)](https://youtu.be/4cMJKsY5B_o)

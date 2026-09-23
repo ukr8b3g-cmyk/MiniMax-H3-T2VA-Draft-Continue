@@ -2,6 +2,12 @@
 
 **1枚見て、気に入ったら同じH3生成の続きへGO。既存WorkflowのSampler部分に挿入できます。**
 
+## BBOXなしの基本ワークフロー
+
+**[BBOXなしのワークフローをダウンロード](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-Draft-Sampler-Turbo6.json)** — ComfyUIで読み込める通常のJSONです。Previewで最初のフレームの予測を確認し、GOで動画・音声のDecodeと保存まで続行します。Structured CanvasやBBOXノードは不要です。
+
+実行前に、導入済みのH3モデル・テキストエンコーダー・VAE・対応するTurbo LoRAを選択してください。初期設定はEuler/simple、全6ステップ・Preview 3ステップ、24 fps、約5秒です。今回の追加では構成を検証しており、このテンプレートのGPU再実行はしていません。
+
 ## 解説動画と配布用テンプレート
 
 [![BBOX Layout・Preview・Continue 英語解説動画](docs/assets/h3-bbox-tutorial.jpg)](https://youtu.be/4cMJKsY5B_o)
