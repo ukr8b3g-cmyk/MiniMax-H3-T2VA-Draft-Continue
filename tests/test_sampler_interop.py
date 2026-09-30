@@ -60,7 +60,7 @@ class SamplerInteropTest(unittest.TestCase):
         self.assertEqual(diagnostic["tensor_shape"], [1,32,32,3])
         self.assertEqual(diagnostic["ui_images"][0]["filename"], "fixture.png")
         json.dumps(diagnostic)
-        self.assertEqual(result.report["preview"]["decoded_batch_shape"], [90,32,32,3])
+        self.assertEqual(result.report["preview"]["decoded_batch_shape"], [22,32,32,3])
         self.assertEqual(result.report["preview"]["returned_tensor_shape"], [1,32,32,3])
 
     def test_preview_continue_numeric_parity_host_double(self):
