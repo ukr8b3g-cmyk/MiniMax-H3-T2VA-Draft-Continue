@@ -153,6 +153,16 @@ def _timeline_has_keys(timeline):
     )
 
 
+def _timeline_uses_offscreen_overscan(timeline):
+    """True only for the provider's explicit v3/v4 overscan coordinate contract."""
+    return (
+        type(timeline) is dict
+        and timeline.get("version") in (3, 4)
+        and timeline.get("coordinate_space")
+        == "normalized_0_1000_with_offscreen_overscan"
+    )
+
+
 def _validate_start_end_timeline_shell(timeline):
     """Validate known no-key Timeline Experimental wrapper fields."""
     if timeline is None:
@@ -328,8 +338,9 @@ def canonical_layout(layout):
     transition = layout.get("transition")
     timeline = layout.get("timeline_experimental")
     multi_key = _timeline_has_keys(timeline)
-    minimum = OFFSCREEN_MIN if multi_key else 0
-    maximum = OFFSCREEN_MAX if multi_key else 1000
+    timeline_overscan = multi_key or _timeline_uses_offscreen_overscan(timeline)
+    minimum = OFFSCREEN_MIN if timeline_overscan else 0
+    maximum = OFFSCREEN_MAX if timeline_overscan else 1000
 
     clean = {k: v for k, v in layout.items()
              if k not in {"_h3_slot_images", "warnings", "transition", "timeline_experimental"}}

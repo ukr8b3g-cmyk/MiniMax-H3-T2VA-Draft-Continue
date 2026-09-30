@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fix Issue #4 compatibility with H3 Structured Canvas Timeline Experimental: accept the provider's explicit `normalized_0_1000_with_offscreen_overscan` START/END contract in v3/v4 no-key timelines.
+- Preserve provider BBOX coordinates within `-1000..2000` without clamping, while keeping ordinary static Canvas layouts strict at `0..1000`.
+- Add regressions for static v3, START→END v3, no-key v4, missing overscan marker, and out-of-range overscan.
+
 ## 1.7.10 - 2026-09-22
 
 - Close Phase 4C C0–C11 as GPU/UI PASS / COMPLETE on ComfyUI 0.37.0, Frontend 1.52.7, and RTX 5060 Ti 16 GB.

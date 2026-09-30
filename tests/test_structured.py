@@ -151,6 +151,52 @@ class StructuredContractTests(unittest.TestCase):
         wrapped = make_source(timeline_wrapped(layout(2), 4), "same")
         self.assertEqual(wrapped, plain)
 
+    def test_static_timeline_v3_offscreen_overscan_is_preserved(self):
+        a = timeline_wrapped(layout(), 3)
+        bbox = [-200, 100, 100, 900]
+        a["boxes"][0]["bbox_2d"] = bbox[:]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = bbox[:]
+        source = make_source(a, "same")
+        self.assertEqual(source["scope"], "start")
+        self.assertEqual(source["ir"]["boxes"][0]["bbox_2d"], bbox)
+        self.assertNotIn("transition", source["ir"])
+
+    def test_start_end_timeline_v3_offscreen_overscan_is_preserved(self):
+        a = timeline_wrapped(layout(), 3)
+        a["boxes"][0]["bbox_2d"] = [-200, 100, 100, 900]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [900, 100, 1200, 900]
+        source = make_source(a, "same")
+        self.assertEqual(source["scope"], "start_end")
+        self.assertEqual(source["ir"]["boxes"][0]["bbox_2d"], [-200, 100, 100, 900])
+        self.assertEqual(
+            source["ir"]["transition"]["end_boxes"][0]["bbox_2d"],
+            [900, 100, 1200, 900],
+        )
+
+    def test_timeline_v4_no_key_offscreen_overscan_is_preserved(self):
+        a = timeline_wrapped(layout(), 4)
+        bbox = [900, 100, 1200, 900]
+        a["boxes"][0]["bbox_2d"] = bbox[:]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = bbox[:]
+        source = make_source(a, "same")
+        self.assertEqual(source["scope"], "start")
+        self.assertEqual(source["ir"]["boxes"][0]["bbox_2d"], bbox)
+
+    def test_timeline_without_overscan_marker_remains_strict(self):
+        a = timeline_wrapped(layout(), 3)
+        a["timeline_experimental"].pop("coordinate_space", None)
+        a["boxes"][0]["bbox_2d"] = [-1, 100, 280, 900]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [-1, 100, 280, 900]
+        with self.assertRaisesRegex(DraftError, "START bbox_2d"):
+            make_source(a, "same")
+
+    def test_timeline_overscan_outside_provider_bounds_is_rejected(self):
+        a = timeline_wrapped(layout(), 3)
+        a["boxes"][0]["bbox_2d"] = [-1001, 100, 280, 900]
+        a["transition"]["end_boxes"][0]["bbox_2d"] = [-1001, 100, 280, 900]
+        with self.assertRaisesRegex(DraftError, "START bbox_2d"):
+            make_source(a, "same")
+
     def test_real_start_end_transition_is_preserved(self):
         a = timeline_wrapped(layout(2), 3)
         a["transition"]["end_boxes"][0]["bbox_2d"] = [100, 120, 360, 920]
