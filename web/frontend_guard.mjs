@@ -1,5 +1,5 @@
 /** Stale-page protection. No automatic reload, persistent storage or workflow edits. */
-export const UI_BUILD = "1.7.10";
+export const UI_BUILD = "1.7.11";
 const INSTALL = Symbol.for("MiniMax.H3.DraftContinue.frontendGuard");
 const BRIDGE = Symbol.for("MiniMax.H3.DraftContinue.loadGraphDataLifecycleBridge");
 const REVIEW = new Set(["H3T2VADraft", "H3T2VAContinue", "H3DraftSampler", "H3ContinueSampler"]);
@@ -38,6 +38,7 @@ export function installFrontendGuard({api, app, runtime, onChange = () => {}}) {
   async function check() {
     if (reloadRequired) throw new Error(state.message);
     if (runtime.loaded !== true || runtime.version !== UI_BUILD || runtime.logicStateContract !== "native" ||
+        runtime.previewDiagnosticContract !== "issue3-stage1" ||
         !String(runtime.lifecycleBridge).startsWith("loadGraphData-wrapper") || !app.loadGraphData?.[BRIDGE]) {
       return block("The current page did not load the expected H3 UI and lifecycle bridge.");
     }

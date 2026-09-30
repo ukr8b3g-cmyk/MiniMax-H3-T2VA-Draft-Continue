@@ -7,7 +7,7 @@ const body = JSON.stringify({prompt:{"15":{class_type:"H3DraftSampler",inputs:{p
 function fixture() {
   const requests=[];
   let manifest={protocol:1,ui_build:UI_BUILD,server_session:"a".repeat(32),assets_available:true};
-  const runtime={loaded:true,version:UI_BUILD,logicStateContract:"native",lifecycleBridge:"loadGraphData-wrapper"};
+  const runtime={loaded:true,version:UI_BUILD,logicStateContract:"native",lifecycleBridge:"loadGraphData-wrapper",previewDiagnosticContract:"issue3-stage1"};
   const app={loadGraphData:async()=>true};
   installLoadGraphDataLifecycleBridge(app);
   const api={
@@ -49,7 +49,7 @@ test("verify and stamp only review requests without changing body or other optio
   assert.equal(f.runtime.frontendGuard.status,"verified");
 });
 test("missing/old evaluated runtime never reaches prompt endpoint",async()=>{
-  for(const version of [undefined,"1.1.1","1.7.4"]) {
+  for(const version of [undefined,"1.1.1","1.7.4","1.7.10"]) {
     const f=fixture(); f.runtime.version=version;
     await assert.rejects(f.api.fetchApi("/prompt",{method:"POST",body}),/expected H3 UI/);
     assert.equal(f.requests.length,0);
@@ -66,6 +66,13 @@ test("server build mismatch locks old page",async()=>{
   await assert.rejects(f.api.fetchApi("/prompt",{method:"POST",body}),/do not match/);
   assert.equal(f.requests.filter(x=>x.route==="/prompt").length,0);
 });
+test("missing Issue #3 diagnostic contract never reaches prompt endpoint",async()=>{
+  const f=fixture();delete f.runtime.previewDiagnosticContract;
+  await assert.rejects(f.api.fetchApi("/prompt",{method:"POST",body}),/expected H3 UI/);
+  assert.equal(f.requests.length,0);
+  assert.equal(f.guard.state.status,"reload_required");
+});
+
 test("backend restart latches reload required, never blesses old approval with new epoch",async()=>{
   const f=fixture();await f.guard.verify();
   f.setManifest({protocol:1,ui_build:UI_BUILD,server_session:"b".repeat(32),assets_available:true});

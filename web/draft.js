@@ -1,8 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
-import * as H3Logic from "./logic.mjs?v=1.7.10";
-import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.10";
-import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.10";
+import * as H3Logic from "./logic.mjs?v=1.7.11";
+import { installLoadGraphDataLifecycleBridge } from "./lifecycle.mjs?v=1.7.11";
+import { installFrontendGuard } from "./frontend_guard.mjs?v=1.7.11";
 
 const {
   branch, signature, continueRequest, safeWorkflow, newSeed,
@@ -77,6 +77,7 @@ const isDraft=node=>DRAFT_CLASSES.has(node?.comfyClass??node?.type);
 const isContinue=node=>CONTINUE_CLASSES.has(node?.comfyClass??node?.type);
 const pending=new Map();
 const workflowRuntime=new WeakMap();
+const previewDiagnosticRuns=new Set();
 // Unique to this evaluated browser page. Never persisted or shared across reloads.
 const PAGE_SESSION=Object.freeze({});
 let frontendGuard=null;
@@ -96,15 +97,37 @@ function diagnosticStoreEntry(store,nodeId){
   return match?{key:match[0],value:match[1]}:{key:null,value:null};
 }
 
-function logPreviewDisplayDiagnostics(node,report,phase){
-  if(!node||!report?.preview_diagnostics)return;
-  const previews=diagnosticStoreEntry(app.nodePreviewImages,node.id);
-  const outputs=diagnosticStoreEntry(app.nodeOutputs,node.id);
+function imageElementDiagnostics(imgs){
+  if(!Array.isArray(imgs))return [];
+  return imgs.map((img,index)=>({
+    index,
+    src:typeof img?.src==="string"?img.src:null,
+    current_src:typeof img?.currentSrc==="string"?img.currentSrc:null,
+    natural_size:[Number(img?.naturalWidth)||0,Number(img?.naturalHeight)||0],
+    rendered_size:[Number(img?.width)||0,Number(img?.height)||0],
+    complete:Boolean(img?.complete),
+  }));
+}
+
+function logPreviewDisplayDiagnostics(node,report,phase,executedOutput=null){
+  if(!report?.preview_diagnostics)return;
+  const nodeId=node?.id??null;
+  const previews=diagnosticStoreEntry(app.nodePreviewImages,nodeId);
+  const outputs=diagnosticStoreEntry(app.nodeOutputs,nodeId);
   const previewUrls=Array.isArray(previews.value)?[...previews.value]:[];
   const outputImages=Array.isArray(outputs.value?.images)?outputs.value.images.map(item=>({...item})):[];
+  const nodePreviewUrls=Array.isArray(node?.preview)?[...node.preview]:[];
+  const nodeImgs=imageElementDiagnostics(node?.imgs);
+  const executedImages=Array.isArray(executedOutput?.images)
+    ?executedOutput.images.map(item=>({...item})):[];
+  const staleNodePreviewProperty=
+    previewUrls.length===0&&nodePreviewUrls.length>0&&outputImages.length>0;
   console.info("[H3 Draft Continue] Preview display diagnostics",{
+    diagnostic_contract:"issue3-stage1",
+    ui_build:"1.7.11",
     phase,
-    node_id:String(node.id),
+    node_id:nodeId==null?null:String(nodeId),
+    node_found:Boolean(node),
     backend:report.preview_diagnostics,
     frontend:{
       preview_store_key:previews.key,
@@ -112,11 +135,27 @@ function logPreviewDisplayDiagnostics(node,report,phase){
       preview_urls:previewUrls,
       output_store_key:outputs.key,
       output_images:outputImages,
-      selected_source:previewUrls.length?"websocket_preview":(outputImages.length?"saved_output":"none"),
-      node_images:Array.isArray(node.images)?node.images.map(item=>({...item})):node.images??null,
-      node_imgs_count:Array.isArray(node.imgs)?node.imgs.length:0,
+      executed_output_images:executedImages,
+      node_preview_urls:nodePreviewUrls,
+      node_images:Array.isArray(node?.images)?node.images.map(item=>({...item})):node?.images??null,
+      displayed_images:nodeImgs,
+      selected_store_source:previewUrls.length?"websocket_preview":(outputImages.length?"saved_output":"none"),
+      stale_node_preview_property:staleNodePreviewProperty,
     },
   });
+}
+
+function schedulePreviewDisplayDiagnostics(node,report,source,executedOutput=null){
+  if(!report?.preview_diagnostics)return;
+  const stateId=report?.state?.state_id??report?.preview_diagnostics?.ui_images?.[0]?.filename??"unknown";
+  const key=`${String(node?.id??"missing")}:${String(stateId)}`;
+  if(previewDiagnosticRuns.has(key))return;
+  previewDiagnosticRuns.add(key);
+  logPreviewDisplayDiagnostics(node,report,`${source}:immediate`,executedOutput);
+  setTimeout(
+    ()=>logPreviewDisplayDiagnostics(node,report,`${source}:post_cleanup_650ms`,executedOutput),
+    650,
+  );
 }
 
 function draftRuntime(node){
@@ -324,7 +363,7 @@ function applyPanel(node,role,ui){
       continue:{title:"UI CHECK REQUIRED",detail:frontendGuard?.state.message??"Checking loaded frontend…"}};
   }
   const badge=node._h3Panel.querySelector(".h3-ui-build");
-  if(badge)badge.textContent=verified?"UI 1.7.10 · VERIFIED":"UI 1.7.10 · NOT VERIFIED";
+  if(badge)badge.textContent=verified?"UI 1.7.11 · VERIFIED":"UI 1.7.11 · NOT VERIFIED";
   const block=role==="draft"?ui.draft:ui.continue;
   node._h3Panel.dataset.kind=ui.kind;
   node._h3Panel.querySelector("strong").textContent=block.title;
@@ -505,10 +544,14 @@ app.registerExtension({
   setup(){
     globalThis.__H3_DRAFT_CONTINUE_UI__ = {
       loaded: true,
-      version: "1.7.10",
+      version: "1.7.11",
       logicStateContract: typeof H3Logic.reviewUiState === "function" ? "native" : "fallback",
+      previewDiagnosticContract: "issue3-stage1",
     };
     console.info("[H3 Draft Continue] Phase 4A UI loaded", globalThis.__H3_DRAFT_CONTINUE_UI__);
+    console.info("[H3 Draft Continue] Issue #3 display diagnostics enabled", {
+      ui_build:"1.7.11", diagnostic_contract:"issue3-stage1",
+    });
 
     const lifecycleBridge=installLoadGraphDataLifecycleBridge(app,{
       before(args){
@@ -565,6 +608,22 @@ app.registerExtension({
     }
 
     api.addEventListener("graphChanged",()=>scheduleReadyValidation());
+
+    // Independent Issue #3 diagnostic hook. This observes the raw Core executed
+    // payload even if a future frontend change bypasses the node onExecuted wrapper.
+    api.addEventListener("executed",event=>{
+      const output=event.detail?.output;
+      const report=output?.h3_draft?.[0];
+      if(!report?.preview_diagnostics)return;
+      const rawId=event.detail?.display_node??event.detail?.node;
+      const node=
+        app.rootGraph?.getNodeById?.(rawId)??
+        app.rootGraph?.getNodeById?.(String(rawId))??
+        app.graph?.getNodeById?.(rawId)??
+        app.graph?.getNodeById?.(String(rawId))??
+        null;
+      queueMicrotask(()=>schedulePreviewDisplayDiagnostics(node,report,"api_executed",output));
+    });
 
     for(const eventName of ["input","change","mouseup","keyup"]){
       window.addEventListener(eventName,()=>scheduleReadyValidation(),true);
@@ -659,10 +718,7 @@ app.registerExtension({
         this._h3ApprovedStateId=null;
         setDraftPhase(this,"ready",{ready:state,message:"",wall:report.total_wall_s});
         if(report.preview_diagnostics){
-          logPreviewDisplayDiagnostics(this,report,"onExecuted");
-          const diagnosticTimer=setTimeout(
-            ()=>logPreviewDisplayDiagnostics(this,report,"post_cleanup_600ms"),600);
-          diagnosticTimer?.unref?.();
+          schedulePreviewDisplayDiagnostics(this,report,"node_onExecuted");
         }
         return;
       }

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Issue #3 diagnostic Stage 1: bump package/frontend build to 1.7.11 so stale evaluated browser JavaScript cannot pass the frontend guard after the diagnostic update.
+- Require the `issue3-stage1` frontend diagnostic contract before browser Queue, and version the imported logic/lifecycle/guard modules with the same 1.7.11 cache key.
+- Expand passive Preview diagnostics to record the preview store, saved output, raw executed output, stale `node.preview` URLs, and the actual `node.imgs` source/natural/rendered dimensions immediately and 650 ms after READY. Sampling, VAE decode, Draft State and Continue LATENT behavior are unchanged.
 - Add passive Issue #3 Preview diagnostics without changing preview selection or rendering: report decoded/returned tensor shapes, the Core PreviewImage UI payload, temp PNG path/existence/byte size/PIL dimensions, and frontend saved-output vs WebSocket-preview state before and after the normal cleanup delay.
 - Fix Issue #4 compatibility with H3 Structured Canvas Timeline Experimental: accept the provider's explicit `normalized_0_1000_with_offscreen_overscan` START/END contract in v3/v4 no-key timelines.
 - Preserve provider BBOX coordinates within `-1000..2000` without clamping, while keeping ordinary static Canvas layouts strict at `0..1000`.
