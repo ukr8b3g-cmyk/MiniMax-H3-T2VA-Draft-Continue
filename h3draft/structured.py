@@ -389,7 +389,9 @@ def canonical_layout(layout):
         raise DraftError(
             "Phase 3B keeps one fixed H3 canvas. START and END canvas geometry must match."
         )
-    end_boxes = _canonical_end_boxes(transition.get("end_boxes"), start_boxes)
+    end_boxes = _canonical_end_boxes(
+        transition.get("end_boxes"), start_boxes, minimum, maximum
+    )
 
     start_geometry = {box["slot"]: box["bbox_2d"] for box in start_boxes}
     end_geometry = {box["slot"]: box["bbox_2d"] for box in end_boxes}
