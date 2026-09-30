@@ -4,6 +4,14 @@
 
 [日本語](README_JA.md) · [Workflow integration](docs/WORKFLOW_INTEROP.md) · [Reference GPU gate](docs/REFERENCE_GATE.md) · [Validation](docs/VALIDATION.md)
 
+## Why preview T2VA instead of switching to I2VA?
+
+**Speed is the main reason.** In the author's tested workflows, text-to-video/audio (T2VA) generation is substantially faster than image-conditioned generation (I2VA). I2VA gives you an input image to inspect from the start, but switching to it just to see the composition would give up that speed advantage. Draft Continue instead shows a predicted first-frame image partway through the T2VA generation, so you can check the rough composition and subject placement before committing to the remaining steps. Actual speed differences depend on your model, settings and hardware.
+
+The recommended 6-step workflow pauses after **3 preview steps** as a practical balance between review speed and readability. At this early stage, the image is deliberately rough and blurry: it is useful for judging broad layout and spatial relationships, not fine detail or final image quality. Raising the preview point to **4 or 5 steps** can make the estimate clearer and more detailed, but takes longer before you can review it. This changes how far sampling has progressed, not the output's pixel resolution.
+
+After approval, GO continues the same generation from the saved Draft state; it does not turn the preview image into a new I2VA input or restart sampling. With the total step count unchanged, moving the preview later leaves fewer steps for Continue.
+
 ## Basic workflow — no BBOX
 
 **[Download the no-BBOX workflow](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-Draft-Sampler-Turbo6.json)** — a normal ComfyUI workflow JSON. Preview the first-frame estimate, then click GO to continue through video/audio Decode and Save. No Structured Canvas or BBOX nodes are needed.
