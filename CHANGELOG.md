@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add passive Issue #3 Preview diagnostics without changing preview selection or rendering: report decoded/returned tensor shapes, the Core PreviewImage UI payload, temp PNG path/existence/byte size/PIL dimensions, and frontend saved-output vs WebSocket-preview state before and after the normal cleanup delay.
 - Fix Issue #4 compatibility with H3 Structured Canvas Timeline Experimental: accept the provider's explicit `normalized_0_1000_with_offscreen_overscan` START/END contract in v3/v4 no-key timelines.
 - Preserve provider BBOX coordinates within `-1000..2000` without clamping, while keeping ordinary static Canvas layouts strict at `0..1000`.
 - Add regressions for static v3, START→END v3, no-key v4, missing overscan marker, and out-of-range overscan.

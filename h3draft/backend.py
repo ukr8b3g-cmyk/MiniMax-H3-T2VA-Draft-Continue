@@ -126,3 +126,62 @@ class CoreBackend:
     def preview_ui(self, image, prompt=None, extra_pnginfo=None):
         return self.nodes.PreviewImage().save_images(
             image, filename_prefix="H3Draft", prompt=prompt, extra_pnginfo=extra_pnginfo)["ui"]
+
+    def preview_diagnostics(self, image, ui):
+        """Best-effort diagnostics only; never changes preview/save behavior."""
+        diagnostic = {
+            "tensor_shape": list(getattr(image, "shape", ())),
+            "tensor_dtype": str(getattr(image, "dtype", "unknown")),
+            "tensor_device": str(getattr(image, "device", "unknown")),
+            "ui_images": [],
+        }
+        items = ui.get("images") if isinstance(ui, dict) else None
+        if not isinstance(items, list):
+            diagnostic["ui_payload_error"] = "ui.images is not a list"
+            return diagnostic
+
+        for raw in items:
+            entry = {}
+            if isinstance(raw, dict):
+                for key in ("filename", "subfolder", "type"):
+                    if key in raw:
+                        entry[key] = raw[key]
+            else:
+                entry["payload_type"] = type(raw).__name__
+                diagnostic["ui_images"].append(entry)
+                continue
+
+            try:
+                import folder_paths
+                from pathlib import Path
+                from PIL import Image as PILImage
+
+                kind = entry.get("type")
+                if kind == "temp":
+                    root = folder_paths.get_temp_directory()
+                elif kind == "output":
+                    root = folder_paths.get_output_directory()
+                elif kind == "input":
+                    root = folder_paths.get_input_directory()
+                else:
+                    root = None
+
+                if root and entry.get("filename"):
+                    path = Path(root)
+                    subfolder = entry.get("subfolder")
+                    if subfolder:
+                        path = path / str(subfolder)
+                    path = path / str(entry["filename"])
+                    entry["path"] = str(path)
+                    entry["exists"] = path.is_file()
+                    if entry["exists"]:
+                        entry["file_bytes"] = path.stat().st_size
+                        with PILImage.open(path) as saved:
+                            entry["saved_size"] = [int(saved.width), int(saved.height)]
+                            entry["saved_mode"] = saved.mode
+                            entry["saved_format"] = saved.format
+            except Exception as exc:
+                entry["file_probe_error"] = f"{type(exc).__name__}: {exc}"
+
+            diagnostic["ui_images"].append(entry)
+        return diagnostic

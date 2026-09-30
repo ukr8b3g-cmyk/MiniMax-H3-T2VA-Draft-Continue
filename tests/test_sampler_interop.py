@@ -1,4 +1,4 @@
-import types, unittest, torch
+import json, types, unittest, torch
 from h3draft.contracts import DraftError
 from h3draft.sampler_backend import resolve_registered_sampler_bindings
 from h3draft.sampler_engine import SamplerEngine
@@ -48,6 +48,20 @@ class SamplerInteropTest(unittest.TestCase):
             "audio_latent":torch.full((1,32,2,7),value+.5) if with_audio else None,
         }
         return ref
+
+    def test_preview_diagnostics_are_passive_and_json_serializable(self):
+        result = self.e.draft_external(
+            self.n,self.g,self.s,self.sig,self.lat,self.vae,preview_steps=3
+        )
+        diagnostic = self.b.preview_diagnostics(
+            result.state.preview,
+            {"images":[{"filename":"fixture.png","subfolder":"","type":"temp"}]},
+        )
+        self.assertEqual(diagnostic["tensor_shape"], [1,32,32,3])
+        self.assertEqual(diagnostic["ui_images"][0]["filename"], "fixture.png")
+        json.dumps(diagnostic)
+        self.assertEqual(result.report["preview"]["decoded_batch_shape"], [90,32,32,3])
+        self.assertEqual(result.report["preview"]["returned_tensor_shape"], [1,32,32,3])
 
     def test_preview_continue_numeric_parity_host_double(self):
         full,_=self.b.sample_external(Noise(self.n.seed),self.g,self.s,self.lat,self.sig)

@@ -33,6 +33,10 @@ class H3DraftSampler:
             video_vae, preview_steps, prompt, unique_id)
         image = result.state.preview.clone()
         ui = engine.backend.preview_ui(image, prompt, extra_pnginfo)
+        diagnostics = engine.backend.preview_diagnostics(image, ui)
+        result.report["preview_diagnostics"] = diagnostics
+        print("[H3 Draft Continue] Preview diagnostics: " +
+              json.dumps(diagnostics, ensure_ascii=False, sort_keys=True))
         ui["h3_draft"] = [result.report]
         return {"ui":ui, "result":(image, result.state, json.dumps(result.report, ensure_ascii=False, indent=2))}
 

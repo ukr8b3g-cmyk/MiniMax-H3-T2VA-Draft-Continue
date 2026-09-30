@@ -88,6 +88,37 @@ function errorText(error){
   return error?.response?.error?.message??error?.message??String(error);
 }
 
+function diagnosticStoreEntry(store,nodeId){
+  const id=String(nodeId??"");
+  const entries=Object.entries(store??{});
+  const match=entries.find(([key])=>key===id)??entries.find(([key])=>
+    key.endsWith(`:${id}`)||key.endsWith(`/${id}`)||key.endsWith(`.${id}`));
+  return match?{key:match[0],value:match[1]}:{key:null,value:null};
+}
+
+function logPreviewDisplayDiagnostics(node,report,phase){
+  if(!node||!report?.preview_diagnostics)return;
+  const previews=diagnosticStoreEntry(app.nodePreviewImages,node.id);
+  const outputs=diagnosticStoreEntry(app.nodeOutputs,node.id);
+  const previewUrls=Array.isArray(previews.value)?[...previews.value]:[];
+  const outputImages=Array.isArray(outputs.value?.images)?outputs.value.images.map(item=>({...item})):[];
+  console.info("[H3 Draft Continue] Preview display diagnostics",{
+    phase,
+    node_id:String(node.id),
+    backend:report.preview_diagnostics,
+    frontend:{
+      preview_store_key:previews.key,
+      preview_count:previewUrls.length,
+      preview_urls:previewUrls,
+      output_store_key:outputs.key,
+      output_images:outputImages,
+      selected_source:previewUrls.length?"websocket_preview":(outputImages.length?"saved_output":"none"),
+      node_images:Array.isArray(node.images)?node.images.map(item=>({...item})):node.images??null,
+      node_imgs_count:Array.isArray(node.imgs)?node.imgs.length:0,
+    },
+  });
+}
+
 function draftRuntime(node){
   // Only state created or explicitly restored inside this evaluated page may
   // participate in open-tab lifecycle persistence. Historical node outputs
@@ -627,6 +658,12 @@ app.registerExtension({
         }
         this._h3ApprovedStateId=null;
         setDraftPhase(this,"ready",{ready:state,message:"",wall:report.total_wall_s});
+        if(report.preview_diagnostics){
+          logPreviewDisplayDiagnostics(this,report,"onExecuted");
+          const diagnosticTimer=setTimeout(
+            ()=>logPreviewDisplayDiagnostics(this,report,"post_cleanup_600ms"),600);
+          diagnosticTimer?.unref?.();
+        }
         return;
       }
 

@@ -53,7 +53,10 @@ class SamplerEngine(Engine):
             images = self.backend.decode_video(x0, video_vae)
             if tuple(images.shape) != (geometry["frame_count"], geometry["height"], geometry["width"], 3):
                 raise DraftError("VAE Preview geometry does not match the input latent.")
+            decoded_batch_shape = list(images.shape)
             image = images[:1].detach().cpu().clone()
+            preview_tensor_shape = list(image.shape)
+            preview_tensor_dtype = str(image.dtype)
             del images, x0, latent
         with self.timed(report, "state_capture"):
             metadata = {k:v for k,v in partial.items() if k != "samples"}
@@ -70,6 +73,9 @@ class SamplerEngine(Engine):
                       reference_count=state.reference_manifest["count"],
                       preview={"kind":"x0_estimate", "frame_index":0,
                                "decoded_frames":geometry["frame_count"],
+                               "decoded_batch_shape":decoded_batch_shape,
+                               "returned_tensor_shape":preview_tensor_shape,
+                               "returned_tensor_dtype":preview_tensor_dtype,
                                "prediction_eval_index":preview_steps-1,
                                "prediction_sigma":float(schedule[preview_steps-1]),
                                "not_a_guaranteed_final_frame":True})
