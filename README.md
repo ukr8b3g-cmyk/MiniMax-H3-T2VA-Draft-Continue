@@ -12,6 +12,10 @@ The recommended 6-step workflow pauses after **3 preview steps** as a practical 
 
 After approval, GO continues the same generation from the saved Draft state; it does not turn the preview image into a new I2VA input or restart sampling. With the total step count unchanged, moving the preview later leaves fewer steps for Continue.
 
+### I2VA is supported too: previewing multiple image references
+
+The later tutorial section also includes a **two-image I2VA workflow**. In that example, the input images act as subject references; they do not directly specify the generated first frame. The Draft preview is therefore still useful: it lets you inspect how the model combines those references into the actual scene, including composition and the subjects' spatial relationships, before continuing the generation. See [Two-image I2VA · Cyberpunk](#two-image-i2va--cyberpunk) below. This is a separate I2VA example, not a switch from T2VA to I2VA halfway through sampling.
+
 ## Basic workflow — no BBOX
 
 **[Download the no-BBOX workflow](https://raw.githubusercontent.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue/main/examples/H3-Draft-Sampler-Turbo6.json)** — a normal ComfyUI workflow JSON. Preview the first-frame estimate, then click GO to continue through video/audio Decode and Save. No Structured Canvas or BBOX nodes are needed.
