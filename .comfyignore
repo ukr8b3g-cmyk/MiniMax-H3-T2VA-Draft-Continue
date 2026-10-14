@@ -1,0 +1,12 @@
+# Development-only files and duplicate example archive.
+# Keep runtime Python, h3draft/, web/, documentation and example JSON/PNG files.
+.git/
+.github/
+.gitignore
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+tests/
+examples/*.zip

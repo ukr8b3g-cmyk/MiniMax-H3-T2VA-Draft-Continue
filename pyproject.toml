@@ -10,4 +10,5 @@ dependencies = []
 Repository = "https://github.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue"
 
 [tool.comfy]
+PublisherId = "ukr8b3g-cmyk"
 DisplayName = "MiniMax H3 T2VA Draft Continue"

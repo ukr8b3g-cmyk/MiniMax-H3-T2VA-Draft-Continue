@@ -207,3 +207,19 @@ Recommended proven concept baseline: shared 4-step Turbo LoRA at 1.0, 6 total st
 Live ControlNet/hook objects, noise masks, custom/multi-model guiders and multistep solver history need dedicated adapters.
 
 No additional pip/runtime dependencies or model downloads are required.
+
+## Installation and package metadata
+
+Clone this repository into your ComfyUI `custom_nodes` directory, then restart ComfyUI:
+
+```bash
+git clone https://github.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue.git
+```
+
+Use a ComfyUI installation with native MiniMax H3 support and the models required by your workflow. This extension declares no additional pip dependencies; ComfyUI provides the host runtime. Models are not bundled.
+
+The package metadata identifies `minimax-h3-t2va-draft-continue` version `1.7.11`, publisher `ukr8b3g-cmyk`. Metadata preparation does not indicate that a Registry release has been published. `.comfyignore` excludes development tests, GitHub configuration and the duplicate example ZIP from Registry packages, while retaining runtime Python, `h3draft/`, `web/`, documentation, example JSON and reference PNG files. The ZIP download above remains available from GitHub.
+
+## License
+
+[Apache License 2.0](LICENSE). Copyright 2026 ukr8b3g-cmyk. Separately installed ComfyUI, model weights and other extensions remain subject to their own licenses.

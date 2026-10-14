@@ -189,3 +189,19 @@ Prompt・CLIP・解像度・尺・CFG・LoRA・scheduler・Referenceは元Workfl
 - CPU所有payload上限512 MiB
 
 `res_multistep`等の履歴依存Sampler、live ControlNet/hook、noise_mask、独自/複数モデルGuiderは別Adapterが必要です。
+
+## 導入とパッケージ情報
+
+ComfyUIの `custom_nodes` ディレクトリ内で以下を実行し、ComfyUIを再起動してください。
+
+```bash
+git clone https://github.com/ukr8b3g-cmyk/MiniMax-H3-T2VA-Draft-Continue.git
+```
+
+MiniMax H3のネイティブ対応があるComfyUIと、使用するWorkflowに必要なモデルを用意してください。この拡張の追加pip依存はありません。ホスト実行環境はComfyUIが提供し、モデルは同梱しません。
+
+パッケージ情報は `minimax-h3-t2va-draft-continue`、バージョン `1.7.11`、PublisherId `ukr8b3g-cmyk` です。このメタデータ整備はRegistryへの公開完了を意味しません。`.comfyignore` はRegistry配布から開発用テスト・GitHub設定・重複する作例ZIPを除外します。実行用Python・`h3draft/`・`web/`・ドキュメント・作例JSON・参照PNGは残します。上記ZIPは引き続きGitHubからダウンロードできます。
+
+## ライセンス
+
+[Apache License 2.0](LICENSE)。Copyright 2026 ukr8b3g-cmyk。別途導入するComfyUI・モデルの重み・他の拡張には、それぞれのライセンスが適用されます。
