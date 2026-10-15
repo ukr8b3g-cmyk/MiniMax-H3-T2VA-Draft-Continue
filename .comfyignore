@@ -10,3 +10,6 @@ __pycache__/
 venv/
 tests/
 examples/*.zip
+
+# Release automation is development tooling, not part of the node package.
+/.github/
